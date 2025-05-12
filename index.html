@@ -460,9 +460,42 @@
         }
 
         /**
+         * Sort subscriptions based on criteria
+         * Priority 1: Payment cycle (yearly first, monthly second)
+         * Priority 2: Payment date
+         */
+        function sortSubscriptions() {
+            // Sort the subscriptions array
+            subscriptions.sort((a, b) => {
+                // Priority 1: Payment cycle (yearly first, monthly second)
+                if (a.cycle !== b.cycle) {
+                    return a.cycle === 'yearly' ? -1 : 1;
+                }
+                
+                // Priority 2: Payment date
+                if (a.cycle === 'monthly' && b.cycle === 'monthly') {
+                    // For monthly payments, sort by day
+                    return a.paymentDay - b.paymentDay;
+                } else if (a.cycle === 'yearly' && b.cycle === 'yearly') {
+                    // For yearly payments, sort by month then day
+                    if (a.paymentMonth !== b.paymentMonth) {
+                        return a.paymentMonth - b.paymentMonth;
+                    }
+                    return a.paymentDay - b.paymentDay;
+                }
+                
+                // If all else is equal, sort by name
+                return a.name.localeCompare(b.name);
+            });
+        }
+
+        /**
          * Render subscriptions to the table
          */
         function renderSubscriptions() {
+            // Sort the subscriptions first
+            sortSubscriptions();
+            
             // Clear the table first
             tableBody.innerHTML = '';
             
@@ -483,8 +516,10 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         ${formatYen(subscription.fee)}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${subscription.cycle === 'monthly' ? '月払い' : '年払い'}
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${subscription.cycle === 'monthly' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}">
+                            ${subscription.cycle === 'monthly' ? '月払い' : '年払い'}
+                        </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         ${formatPaymentDate(subscription)}
