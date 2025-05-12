@@ -23,8 +23,9 @@
 
         <!-- Input Form Card -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-8 max-w-md mx-auto">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">新規サブスクリプション</h2>
+            <h2 class="text-xl font-semibold text-gray-800 mb-4" id="form-title">新規サブスクリプション</h2>
             <form id="subscription-form" class="space-y-4">
+                <input type="hidden" id="edit-id" value="">
                 <div>
                     <label for="subscription-name" class="block text-sm font-medium text-gray-700 mb-1">サブスク名</label>
                     <input 
@@ -35,13 +36,13 @@
                     >
                 </div>
                 <div>
-                    <label for="subscription-fee" class="block text-sm font-medium text-gray-700 mb-1">月額料金（円）</label>
+                    <label for="subscription-fee" class="block text-sm font-medium text-gray-700 mb-1">料金（円）</label>
                     <input 
                         type="number" 
                         id="subscription-fee" 
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         min="0" 
-                        step="100"
+                        step="1"
                         required
                     >
                 </div>
@@ -55,17 +56,70 @@
                         <option value="yearly">年払い</option>
                     </select>
                 </div>
-                <button 
-                    type="submit" 
-                    class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition duration-300"
-                >
-                    追加
-                </button>
+                
+                <!-- 支払い日入力フィールド（動的に切り替わる） -->
+                <div id="monthly-payment-date-container">
+                    <label for="monthly-payment-date" class="block text-sm font-medium text-gray-700 mb-1">支払い日（毎月）</label>
+                    <input 
+                        type="number" 
+                        id="monthly-payment-date" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        min="1" 
+                        max="31" 
+                        placeholder="1〜31" 
+                        required
+                    >
+                </div>
+                
+                <div id="yearly-payment-date-container" class="hidden space-y-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">支払い日（年間）</label>
+                    <div class="flex space-x-2">
+                        <div class="w-1/2">
+                            <input 
+                                type="number" 
+                                id="yearly-payment-month" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                min="1" 
+                                max="12" 
+                                placeholder="月" 
+                                required
+                            >
+                        </div>
+                        <div class="w-1/2">
+                            <input 
+                                type="number" 
+                                id="yearly-payment-day" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                min="1" 
+                                max="31" 
+                                placeholder="日" 
+                                required
+                            >
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-2">
+                    <button 
+                        type="submit" 
+                        id="submit-button"
+                        class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition duration-300"
+                    >
+                        追加
+                    </button>
+                    <button 
+                        type="button" 
+                        id="cancel-button"
+                        class="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded-md transition duration-300 hidden"
+                    >
+                        キャンセル
+                    </button>
+                </div>
             </form>
         </div>
 
         <!-- Subscription List -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8 max-w-4xl mx-auto overflow-hidden">
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8 max-w-5xl mx-auto overflow-hidden">
             <h2 class="text-xl font-semibold text-gray-800 mb-4">サブスクリプション一覧</h2>
             
             <div class="overflow-x-auto">
@@ -75,6 +129,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">サブスク名</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">料金</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">支払いサイクル</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">支払い日</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                         </tr>
                     </thead>
@@ -90,8 +145,16 @@
             </div>
         </div>
 
+        <!-- Monthly Payment Summary -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8 max-w-5xl mx-auto">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">月ごとの支払い合計</h2>
+            <div id="monthly-summary" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Monthly summaries will be added here by JavaScript -->
+            </div>
+        </div>
+
         <!-- Total Monthly Cost -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8 max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8 max-w-5xl mx-auto">
             <div class="flex justify-between items-center">
                 <h2 class="text-xl font-semibold text-gray-800">月換算の合計</h2>
                 <p id="total-cost" class="text-2xl font-bold text-blue-600">0円</p>
@@ -110,13 +173,43 @@
 
         // DOM Elements
         const subscriptionForm = document.getElementById('subscription-form');
+        const formTitle = document.getElementById('form-title');
+        const submitButton = document.getElementById('submit-button');
+        const cancelButton = document.getElementById('cancel-button');
+        const editIdInput = document.getElementById('edit-id');
         const subscriptionTable = document.getElementById('subscription-table');
         const tableBody = subscriptionTable.querySelector('tbody');
         const emptyState = document.getElementById('empty-state');
         const totalCostElement = document.getElementById('total-cost');
+        const paymentCycleSelect = document.getElementById('payment-cycle');
+        const monthlyPaymentDateContainer = document.getElementById('monthly-payment-date-container');
+        const yearlyPaymentDateContainer = document.getElementById('yearly-payment-date-container');
+        const monthlyPaymentDate = document.getElementById('monthly-payment-date');
+        const yearlyPaymentMonth = document.getElementById('yearly-payment-month');
+        const yearlyPaymentDay = document.getElementById('yearly-payment-day');
+        const monthlySummary = document.getElementById('monthly-summary');
         
         // Subscription data array
         let subscriptions = [];
+        
+        // Show correct payment date fields based on payment cycle
+        paymentCycleSelect.addEventListener('change', togglePaymentDateFields);
+        
+        function togglePaymentDateFields() {
+            if (paymentCycleSelect.value === 'monthly') {
+                monthlyPaymentDateContainer.classList.remove('hidden');
+                yearlyPaymentDateContainer.classList.add('hidden');
+                monthlyPaymentDate.setAttribute('required', '');
+                yearlyPaymentMonth.removeAttribute('required');
+                yearlyPaymentDay.removeAttribute('required');
+            } else {
+                monthlyPaymentDateContainer.classList.add('hidden');
+                yearlyPaymentDateContainer.classList.remove('hidden');
+                monthlyPaymentDate.removeAttribute('required');
+                yearlyPaymentMonth.setAttribute('required', '');
+                yearlyPaymentDay.setAttribute('required', '');
+            }
+        }
 
         /**
          * Format a number as Japanese Yen
@@ -126,6 +219,19 @@
         function formatYen(amount) {
             return `${amount.toLocaleString()}円`;
         }
+        
+        /**
+         * Format payment date based on cycle
+         * @param {Object} subscription - The subscription object
+         * @return {string} Formatted payment date
+         */
+        function formatPaymentDate(subscription) {
+            if (subscription.cycle === 'monthly') {
+                return `毎月${subscription.paymentDay}日`;
+            } else {
+                return `${subscription.paymentMonth}月${subscription.paymentDay}日`;
+            }
+        }
 
         /**
          * Calculate monthly cost from all subscriptions
@@ -133,7 +239,7 @@
          */
         function calculateMonthlyTotal() {
             return subscriptions.reduce((total, subscription) => {
-                const fee = parseInt(subscription.fee, 10);
+                const fee = parseFloat(subscription.fee);
                 // Convert yearly payments to monthly
                 return total + (subscription.cycle === 'yearly' ? fee / 12 : fee);
             }, 0);
@@ -145,6 +251,70 @@
         function updateTotalCost() {
             const monthlyTotal = calculateMonthlyTotal();
             totalCostElement.textContent = formatYen(Math.round(monthlyTotal));
+        }
+        
+        /**
+         * Calculate total payments by month
+         * @return {Object} Map of month to total payments
+         */
+        function calculateMonthlyPayments() {
+            const months = {
+                1: '1月', 2: '2月', 3: '3月', 4: '4月', 
+                5: '5月', 6: '6月', 7: '7月', 8: '8月',
+                9: '9月', 10: '10月', 11: '11月', 12: '12月'
+            };
+            
+            const monthlyPayments = {};
+            
+            // Initialize all months with 0
+            for (let i = 1; i <= 12; i++) {
+                monthlyPayments[i] = 0;
+            }
+            
+            // Add each subscription's payment to appropriate month(s)
+            subscriptions.forEach(subscription => {
+                const fee = parseFloat(subscription.fee);
+                
+                if (subscription.cycle === 'monthly') {
+                    // Monthly payments affect all months equally
+                    for (let i = 1; i <= 12; i++) {
+                        monthlyPayments[i] += fee;
+                    }
+                } else {
+                    // Yearly payments only affect the specific month
+                    const month = parseInt(subscription.paymentMonth);
+                    monthlyPayments[month] += fee;
+                }
+            });
+            
+            // Format the results
+            const result = [];
+            for (let i = 1; i <= 12; i++) {
+                result.push({
+                    month: months[i],
+                    total: monthlyPayments[i]
+                });
+            }
+            
+            return result;
+        }
+        
+        /**
+         * Update the monthly payment summary
+         */
+        function updateMonthlySummary() {
+            const monthlyPayments = calculateMonthlyPayments();
+            monthlySummary.innerHTML = '';
+            
+            monthlyPayments.forEach(month => {
+                const monthDiv = document.createElement('div');
+                monthDiv.className = 'bg-gray-100 p-3 rounded-md';
+                monthDiv.innerHTML = `
+                    <div class="text-sm font-medium text-gray-700">${month.month}</div>
+                    <div class="text-lg font-bold ${month.total > 0 ? 'text-blue-600' : 'text-gray-400'}">${formatYen(month.total)}</div>
+                `;
+                monthlySummary.appendChild(monthDiv);
+            });
         }
 
         /**
@@ -170,18 +340,49 @@
          * @param {string} name - Subscription name
          * @param {number} fee - Subscription fee
          * @param {string} cycle - Payment cycle (monthly/yearly)
+         * @param {number} paymentDay - Day of payment
+         * @param {number} paymentMonth - Month of payment (for yearly cycle)
          */
-        function addSubscription(name, fee, cycle) {
+        function addSubscription(name, fee, cycle, paymentDay, paymentMonth = null) {
             const newSubscription = {
                 id: Date.now().toString(), // Use timestamp as unique ID
                 name: name,
                 fee: fee,
-                cycle: cycle
+                cycle: cycle,
+                paymentDay: paymentDay,
+                paymentMonth: paymentMonth
             };
             
             subscriptions.push(newSubscription);
             saveSubscriptions();
             renderSubscriptions();
+        }
+
+        /**
+         * Update an existing subscription
+         * @param {string} id - Subscription ID to update
+         * @param {string} name - Subscription name
+         * @param {number} fee - Subscription fee
+         * @param {string} cycle - Payment cycle (monthly/yearly)
+         * @param {number} paymentDay - Day of payment
+         * @param {number} paymentMonth - Month of payment (for yearly cycle)
+         */
+        function updateSubscription(id, name, fee, cycle, paymentDay, paymentMonth = null) {
+            const index = subscriptions.findIndex(sub => sub.id === id);
+            
+            if (index !== -1) {
+                subscriptions[index] = {
+                    ...subscriptions[index],
+                    name: name,
+                    fee: fee,
+                    cycle: cycle,
+                    paymentDay: paymentDay,
+                    paymentMonth: paymentMonth
+                };
+                
+                saveSubscriptions();
+                renderSubscriptions();
+            }
         }
 
         /**
@@ -192,6 +393,70 @@
             subscriptions = subscriptions.filter(sub => sub.id !== id);
             saveSubscriptions();
             renderSubscriptions();
+        }
+        
+        /**
+         * Get subscription by ID
+         * @param {string} id - Subscription ID to get
+         * @return {Object} The subscription object or null
+         */
+        function getSubscription(id) {
+            return subscriptions.find(sub => sub.id === id) || null;
+        }
+        
+        /**
+         * Set the form to edit mode for a specific subscription
+         * @param {string} id - Subscription ID to edit
+         */
+        function editSubscription(id) {
+            const subscription = getSubscription(id);
+            
+            if (subscription) {
+                // Update form UI
+                formTitle.textContent = 'サブスクリプションを編集';
+                submitButton.textContent = '更新';
+                cancelButton.classList.remove('hidden');
+                
+                // Set form values
+                editIdInput.value = subscription.id;
+                document.getElementById('subscription-name').value = subscription.name;
+                document.getElementById('subscription-fee').value = subscription.fee;
+                document.getElementById('payment-cycle').value = subscription.cycle;
+                
+                // Set payment date fields
+                if (subscription.cycle === 'monthly') {
+                    document.getElementById('monthly-payment-date').value = subscription.paymentDay;
+                } else {
+                    document.getElementById('yearly-payment-month').value = subscription.paymentMonth;
+                    document.getElementById('yearly-payment-day').value = subscription.paymentDay;
+                }
+                
+                // Toggle payment date fields
+                togglePaymentDateFields();
+                
+                // Scroll to form
+                document.getElementById('subscription-form').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        /**
+         * Reset the form to add mode
+         */
+        function resetForm() {
+            // Reset form UI
+            formTitle.textContent = '新規サブスクリプション';
+            submitButton.textContent = '追加';
+            cancelButton.classList.add('hidden');
+            
+            // Clear form values
+            editIdInput.value = '';
+            subscriptionForm.reset();
+            
+            // Set default payment cycle
+            paymentCycleSelect.value = 'monthly';
+            
+            // Show monthly payment date field
+            togglePaymentDateFields();
         }
 
         /**
@@ -221,10 +486,19 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         ${subscription.cycle === 'monthly' ? '月払い' : '年払い'}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${formatPaymentDate(subscription)}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <button 
+                            class="text-blue-600 hover:text-blue-900 focus:outline-none mr-3"
+                            data-edit-id="${subscription.id}"
+                        >
+                            ✎
+                        </button>
                         <button 
                             class="text-red-600 hover:text-red-900 focus:outline-none"
-                            data-id="${subscription.id}"
+                            data-delete-id="${subscription.id}"
                         >
                             ✕
                         </button>
@@ -234,8 +508,9 @@
                 tableBody.appendChild(row);
             });
             
-            // Update the total cost
+            // Update the total cost and monthly summary
             updateTotalCost();
+            updateMonthlySummary();
         }
 
         // Event Listeners
@@ -249,32 +524,81 @@
             const cycleSelect = document.getElementById('payment-cycle');
             
             const name = nameInput.value.trim();
-            const fee = parseInt(feeInput.value, 10);
+            const fee = parseFloat(feeInput.value);
             const cycle = cycleSelect.value;
             
-            if (name && !isNaN(fee) && fee >= 0) {
-                addSubscription(name, fee, cycle);
+            // Get payment date based on cycle
+            let paymentDay, paymentMonth;
+            
+            if (cycle === 'monthly') {
+                paymentDay = parseInt(monthlyPaymentDate.value);
+                paymentMonth = null;
+            } else {
+                paymentDay = parseInt(yearlyPaymentDay.value);
+                paymentMonth = parseInt(yearlyPaymentMonth.value);
+            }
+            
+            if (name && !isNaN(fee) && fee >= 0 && !isNaN(paymentDay)) {
+                // Check if we're editing or adding
+                const editId = editIdInput.value;
                 
-                // Reset form
-                nameInput.value = '';
-                feeInput.value = '';
-                cycleSelect.value = 'monthly';
-                nameInput.focus();
+                if (editId) {
+                    // Update existing subscription
+                    updateSubscription(editId, name, fee, cycle, paymentDay, paymentMonth);
+                    resetForm();
+                } else {
+                    // Add new subscription
+                    addSubscription(name, fee, cycle, paymentDay, paymentMonth);
+                    
+                    // Reset form but keep payment cycle selection
+                    const currentCycle = cycleSelect.value;
+                    nameInput.value = '';
+                    feeInput.value = '';
+                    cycleSelect.value = currentCycle;
+                    
+                    if (cycle === 'monthly') {
+                        monthlyPaymentDate.value = '';
+                    } else {
+                        yearlyPaymentMonth.value = '';
+                        yearlyPaymentDay.value = '';
+                    }
+                    
+                    nameInput.focus();
+                }
             }
         });
         
-        // Delete button clicks
+        // Cancel button
+        cancelButton.addEventListener('click', function() {
+            resetForm();
+        });
+        
+        // Table actions (Edit and Delete)
         tableBody.addEventListener('click', function(event) {
-            const deleteButton = event.target.closest('button[data-id]');
+            // Check for edit button click
+            const editButton = event.target.closest('button[data-edit-id]');
+            if (editButton) {
+                const id = editButton.getAttribute('data-edit-id');
+                editSubscription(id);
+                return;
+            }
+            
+            // Check for delete button click
+            const deleteButton = event.target.closest('button[data-delete-id]');
             if (deleteButton) {
-                const id = deleteButton.getAttribute('data-id');
+                const id = deleteButton.getAttribute('data-delete-id');
                 removeSubscription(id);
+                return;
             }
         });
+        
+        // Payment cycle change
+        paymentCycleSelect.addEventListener('change', togglePaymentDateFields);
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             loadSubscriptions();
+            togglePaymentDateFields();
         });
     </script>
 </body>
