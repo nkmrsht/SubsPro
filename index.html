@@ -49,8 +49,20 @@
                 </h1>
                 <p class="text-xl font-semibold text-gray-700">スマートサブスク管理</p>
             </div>
-            <div id="user-controls" class="flex items-center space-x-4">
-                <!-- Will be populated by JS -->
+            <div class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
+                <div class="flex items-center space-x-2">
+                    <label for="display-currency" class="text-sm font-medium text-gray-600">表示通貨:</label>
+                    <select 
+                        id="display-currency" 
+                        class="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="JPY">日本円 (¥)</option>
+                        <option value="USD">米ドル ($)</option>
+                    </select>
+                </div>
+                <div id="user-controls" class="flex items-center space-x-4">
+                    <!-- Will be populated by JS -->
+                </div>
             </div>
         </header>
 
@@ -364,7 +376,63 @@
         let totalCostElement, paymentCycleSelect;
         let monthlyPaymentDateContainer, yearlyPaymentDateContainer;
         let monthlyPaymentDate, yearlyPaymentMonth, yearlyPaymentDay;
-        let monthlySummary;
+        let monthlySummary, subscriptionCurrency, displayCurrencySelector;
+        
+        // 為替レートを取得する関数
+        async function fetchExchangeRates() {
+            try {
+                const response = await fetch('/api/exchange-rate');
+                if (response.ok) {
+                    const data = await response.json();
+                    exchangeRates = data;
+                    console.log('為替レート取得成功:', exchangeRates);
+                    // 表示を更新
+                    renderSubscriptions();
+                    updateMonthlySummary();
+                    updateTotalCost();
+                } else {
+                    console.error('為替レート取得エラー:', response.statusText);
+                }
+            } catch (error) {
+                console.error('為替レート取得エラー:', error);
+            }
+        }
+        
+        // 通貨変換関数
+        function convertCurrency(amount, fromCurrency, toCurrency) {
+            if (fromCurrency === toCurrency) {
+                return amount;
+            }
+            
+            if (fromCurrency === 'JPY' && toCurrency === 'USD') {
+                return amount * exchangeRates.JPY_USD;
+            } else if (fromCurrency === 'USD' && toCurrency === 'JPY') {
+                return amount * exchangeRates.USD_JPY;
+            }
+            
+            return amount;
+        }
+        
+        // 金額を表示用にフォーマットする関数
+        function formatCurrency(amount, currency) {
+            if (currency === 'JPY') {
+                return Math.round(amount).toLocaleString() + '円';
+            } else if (currency === 'USD') {
+                return '$' + amount.toFixed(2).toLocaleString();
+            }
+            return amount.toString();
+        }
+        
+        // 通貨表示を切り替える関数
+        function updateDisplayCurrency(currency) {
+            displayCurrency = currency;
+            if (displayCurrencySelector) {
+                displayCurrencySelector.value = currency;
+            }
+            renderSubscriptions();
+            updateMonthlySummary();
+            updateTotalCost();
+        }
         
         // Initialize UI
         function initUI() {
@@ -436,6 +504,20 @@
             
             // Add event listeners
             paymentCycleSelect.addEventListener('change', togglePaymentDateFields);
+            
+            // 通貨関連の要素を初期化
+            subscriptionCurrency = document.getElementById('subscription-currency');
+            displayCurrencySelector = document.getElementById('display-currency');
+            
+            // 表示通貨切り替えイベントを設定
+            if (displayCurrencySelector) {
+                displayCurrencySelector.addEventListener('change', function(e) {
+                    updateDisplayCurrency(e.target.value);
+                });
+            }
+            
+            // 為替レートを取得
+            fetchExchangeRates();
             
             // Form submission
             subscriptionForm.addEventListener('submit', handleFormSubmit);
