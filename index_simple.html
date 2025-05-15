@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SubsPro - シンプル版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-10">
+        <header class="text-center mb-12">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-600 mb-3">SubsPro - シンプル版</h1>
+            <p class="text-lg text-gray-600">サブスク管理アプリ</p>
+        </header>
+
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8 mx-auto max-w-md">
+            <div class="space-y-4">
+                <button id="login-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-md">
+                    ログイン
+                </button>
+                <button id="register-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-4 rounded-md">
+                    新規登録
+                </button>
+                <button id="offline-btn" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-3 px-4 rounded-md">
+                    オフラインで使用
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('login-btn').addEventListener('click', () => {
+            alert('ログインボタンがクリックされました！');
+        });
+        
+        document.getElementById('register-btn').addEventListener('click', () => {
+            alert('新規登録ボタンがクリックされました！');
+        });
+        
+        document.getElementById('offline-btn').addEventListener('click', () => {
+            alert('オフラインモードボタンがクリックされました！');
+        });
+    </script>
+</body>
+</html>
