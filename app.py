@@ -70,7 +70,7 @@ def load_user(user_id):
 # 静的ファイルのルート
 @app.route('/')
 def index():
-    return send_from_directory('.', 'index_simple.html')
+    return send_from_directory('.', 'index.html')
 
 # 追加：静的ファイルアクセス用ルート
 @app.route('/<path:path>')
