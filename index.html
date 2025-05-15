@@ -1049,6 +1049,7 @@
                 editIdInput.value = subscription.id;
                 document.getElementById('subscription-name').value = subscription.name;
                 document.getElementById('subscription-fee').value = subscription.fee;
+                document.getElementById('subscription-currency').value = subscription.currency || 'JPY';
                 document.getElementById('payment-cycle').value = subscription.cycle;
                 
                 // Set payment date fields
