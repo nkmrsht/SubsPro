@@ -881,7 +881,7 @@
         }
         
         // Create a new subscription
-        async function createSubscription(name, fee, cycle, paymentDay, paymentMonth = null) {
+        async function createSubscription(name, fee, currency, cycle, paymentDay, paymentMonth = null) {
             if (currentUser) {
                 if (currentUser.id === 'offline') {
                     // Offline mode, save to localStorage
@@ -889,6 +889,7 @@
                         id: Date.now().toString(),
                         name,
                         fee,
+                        currency,
                         cycle,
                         paymentDay,
                         paymentMonth
