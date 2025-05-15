@@ -17,18 +17,110 @@
             background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+        .auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .auth-modal {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 28rem;
+            padding: 1.5rem;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="container mx-auto px-4 py-10">
-        <!-- Hero Section -->
-        <header class="text-center mb-12">
-            <h1 class="text-3xl md:text-5xl font-bold mb-3">
-                <span class="gradient-text">SubsPro</span>
-            </h1>
-            <p class="text-xl font-semibold text-gray-700 mb-2">スマートサブスク管理</p>
+        <!-- Header with Nav -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-12">
+            <div class="text-center md:text-left mb-4 md:mb-0">
+                <h1 class="text-3xl md:text-5xl font-bold mb-2">
+                    <span class="gradient-text">SubsPro</span>
+                </h1>
+                <p class="text-xl font-semibold text-gray-700">スマートサブスク管理</p>
+            </div>
+            <div id="user-controls" class="flex items-center space-x-4">
+                <!-- Will be populated by JS -->
+            </div>
         </header>
 
+        <!-- Main Content -->
+        <div id="main-content">
+            <!-- Will be shown only when user is logged in -->
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-gray-500 text-sm mt-12 pb-6">
+            <div class="flex items-center justify-center mb-2">
+                <span class="gradient-text font-bold text-lg mr-1">SubsPro</span>
+                <span>by</span>
+            </div>
+            <p>© 2025 Lobbdesign LLC</p>
+        </footer>
+    </div>
+
+    <!-- Auth Modal Template -->
+    <template id="auth-modal-template">
+        <div class="auth-overlay">
+            <div class="auth-modal">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-800" id="auth-modal-title">アカウント登録</h2>
+                    <button id="auth-modal-close" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <form id="auth-form" class="space-y-4">
+                    <div>
+                        <label for="auth-username" class="block text-sm font-medium text-gray-700 mb-1">ユーザー名</label>
+                        <input 
+                            type="text" 
+                            id="auth-username" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                        >
+                    </div>
+                    <div>
+                        <label for="auth-password" class="block text-sm font-medium text-gray-700 mb-1">パスワード</label>
+                        <input 
+                            type="password" 
+                            id="auth-password" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                        >
+                    </div>
+                    <div id="auth-error" class="text-red-500 text-sm hidden"></div>
+                    <div class="flex space-x-2">
+                        <button 
+                            type="submit" 
+                            id="auth-submit"
+                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition duration-300"
+                        >
+                            登録
+                        </button>
+                    </div>
+                    <div class="text-center text-sm text-gray-600">
+                        <span id="auth-switch-text">アカウントをお持ちの方は</span>
+                        <button type="button" id="auth-switch-btn" class="text-blue-500 hover:text-blue-700">ログイン</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
+
+    <!-- Main Content Template -->
+    <template id="main-content-template">
         <!-- Input Form Card -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-8 max-w-md mx-auto">
             <h2 class="text-xl font-semibold text-gray-800 mb-4" id="form-title">新規サブスクリプション</h2>
@@ -168,45 +260,381 @@
                 <p id="total-cost" class="text-2xl font-bold text-blue-600">0円</p>
             </div>
         </div>
+    </template>
 
-        <!-- Footer -->
-        <footer class="text-center text-gray-500 text-sm mt-12 pb-6">
-            <div class="flex items-center justify-center mb-2">
-                <span class="gradient-text font-bold text-lg mr-1">SubsPro</span>
-                <span>by</span>
+    <!-- User Controls (Logged out) Template -->
+    <template id="user-controls-logged-out-template">
+        <div class="flex space-x-2">
+            <button 
+                id="login-button" 
+                class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition duration-300"
+            >
+                ログイン
+            </button>
+            <button 
+                id="register-button" 
+                class="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md transition duration-300"
+            >
+                新規登録
+            </button>
+        </div>
+    </template>
+
+    <!-- User Controls (Logged in) Template -->
+    <template id="user-controls-logged-in-template">
+        <div class="flex items-center space-x-4">
+            <div class="text-right">
+                <p class="text-sm text-gray-600">ログイン中：</p>
+                <p class="font-medium text-gray-800" id="username-display"></p>
             </div>
-            <p>© 2025 Lobbdesign LLC</p>
-        </footer>
-    </div>
+            <button 
+                id="logout-button" 
+                class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md transition duration-300"
+            >
+                ログアウト
+            </button>
+        </div>
+    </template>
+
+    <!-- Guest Welcome Template -->
+    <template id="guest-welcome-template">
+        <div class="bg-white rounded-lg shadow-md p-8 max-w-3xl mx-auto text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">SubsProへようこそ！</h2>
+            <p class="text-lg text-gray-600 mb-6">
+                サブスクリプション管理をもっと簡単に。<br>
+                アカウントを作成すると、複数のデバイスからアクセスできます。
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4">
+                <button 
+                    id="welcome-register-button" 
+                    class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300"
+                >
+                    アカウント作成
+                </button>
+                <button 
+                    id="welcome-login-button" 
+                    class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300"
+                >
+                    ログイン
+                </button>
+                <button 
+                    id="welcome-offline-button" 
+                    class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg transition duration-300"
+                >
+                    オフラインで使用
+                </button>
+            </div>
+        </div>
+    </template>
 
     <script>
         // Storage key for localStorage
         const STORAGE_KEY = 'lobbdesign_subs_v1';
-
-        // DOM Elements
-        const subscriptionForm = document.getElementById('subscription-form');
-        const formTitle = document.getElementById('form-title');
-        const submitButton = document.getElementById('submit-button');
-        const cancelButton = document.getElementById('cancel-button');
-        const editIdInput = document.getElementById('edit-id');
-        const subscriptionTable = document.getElementById('subscription-table');
-        const tableBody = subscriptionTable.querySelector('tbody');
-        const emptyState = document.getElementById('empty-state');
-        const totalCostElement = document.getElementById('total-cost');
-        const paymentCycleSelect = document.getElementById('payment-cycle');
-        const monthlyPaymentDateContainer = document.getElementById('monthly-payment-date-container');
-        const yearlyPaymentDateContainer = document.getElementById('yearly-payment-date-container');
-        const monthlyPaymentDate = document.getElementById('monthly-payment-date');
-        const yearlyPaymentMonth = document.getElementById('yearly-payment-month');
-        const yearlyPaymentDay = document.getElementById('yearly-payment-day');
-        const monthlySummary = document.getElementById('monthly-summary');
+        
+        // Current user data
+        let currentUser = null;
         
         // Subscription data array
         let subscriptions = [];
         
-        // Show correct payment date fields based on payment cycle
-        paymentCycleSelect.addEventListener('change', togglePaymentDateFields);
+        // DOM Elements to be initialized after content is rendered
+        let subscriptionForm, formTitle, submitButton, cancelButton;
+        let editIdInput, subscriptionTable, tableBody, emptyState;
+        let totalCostElement, paymentCycleSelect;
+        let monthlyPaymentDateContainer, yearlyPaymentDateContainer;
+        let monthlyPaymentDate, yearlyPaymentMonth, yearlyPaymentDay;
+        let monthlySummary;
         
+        // Initialize UI
+        function initUI() {
+            const userControlsContainer = document.getElementById('user-controls');
+            const mainContentContainer = document.getElementById('main-content');
+            
+            // Clear containers
+            userControlsContainer.innerHTML = '';
+            mainContentContainer.innerHTML = '';
+            
+            if (currentUser) {
+                // User is logged in, show user controls and main content
+                const userControlsTemplate = document.getElementById('user-controls-logged-in-template');
+                userControlsContainer.appendChild(userControlsTemplate.content.cloneNode(true));
+                
+                // Set username
+                document.getElementById('username-display').textContent = currentUser.username;
+                
+                // Set logout button handler
+                document.getElementById('logout-button').addEventListener('click', logout);
+                
+                // Show main content
+                const mainContentTemplate = document.getElementById('main-content-template');
+                mainContentContainer.appendChild(mainContentTemplate.content.cloneNode(true));
+                
+                // Initialize main content elements
+                initMainContentElements();
+                
+                // Load subscriptions for user
+                loadSubscriptions();
+            } else {
+                // User is logged out, show login/register buttons and welcome message
+                const userControlsTemplate = document.getElementById('user-controls-logged-out-template');
+                userControlsContainer.appendChild(userControlsTemplate.content.cloneNode(true));
+                
+                // Set login/register button handlers
+                document.getElementById('login-button').addEventListener('click', () => showAuthModal('login'));
+                document.getElementById('register-button').addEventListener('click', () => showAuthModal('register'));
+                
+                // Show welcome message
+                const guestWelcomeTemplate = document.getElementById('guest-welcome-template');
+                mainContentContainer.appendChild(guestWelcomeTemplate.content.cloneNode(true));
+                
+                // Set welcome button handlers
+                document.getElementById('welcome-register-button').addEventListener('click', () => showAuthModal('register'));
+                document.getElementById('welcome-login-button').addEventListener('click', () => showAuthModal('login'));
+                document.getElementById('welcome-offline-button').addEventListener('click', useOfflineMode);
+            }
+        }
+        
+        // Initialize main content elements
+        function initMainContentElements() {
+            subscriptionForm = document.getElementById('subscription-form');
+            formTitle = document.getElementById('form-title');
+            submitButton = document.getElementById('submit-button');
+            cancelButton = document.getElementById('cancel-button');
+            editIdInput = document.getElementById('edit-id');
+            subscriptionTable = document.getElementById('subscription-table');
+            tableBody = subscriptionTable.querySelector('tbody');
+            emptyState = document.getElementById('empty-state');
+            totalCostElement = document.getElementById('total-cost');
+            paymentCycleSelect = document.getElementById('payment-cycle');
+            monthlyPaymentDateContainer = document.getElementById('monthly-payment-date-container');
+            yearlyPaymentDateContainer = document.getElementById('yearly-payment-date-container');
+            monthlyPaymentDate = document.getElementById('monthly-payment-date');
+            yearlyPaymentMonth = document.getElementById('yearly-payment-month');
+            yearlyPaymentDay = document.getElementById('yearly-payment-day');
+            monthlySummary = document.getElementById('monthly-summary');
+            
+            // Add event listeners
+            paymentCycleSelect.addEventListener('change', togglePaymentDateFields);
+            
+            // Form submission
+            subscriptionForm.addEventListener('submit', handleFormSubmit);
+            
+            // Cancel button
+            cancelButton.addEventListener('click', resetForm);
+            
+            // Table actions (Edit and Delete)
+            tableBody.addEventListener('click', handleTableActions);
+            
+            // Initialize form fields
+            togglePaymentDateFields();
+        }
+        
+        // Show the authentication modal
+        function showAuthModal(mode) {
+            // First remove any existing modals
+            const existingModal = document.querySelector('.auth-overlay');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Clone the modal template
+            const modalTemplate = document.getElementById('auth-modal-template');
+            const modalNode = modalTemplate.content.cloneNode(true);
+            document.body.appendChild(modalNode);
+            
+            // Get elements
+            const modal = document.querySelector('.auth-overlay');
+            const modalTitle = document.getElementById('auth-modal-title');
+            const form = document.getElementById('auth-form');
+            const submitButton = document.getElementById('auth-submit');
+            const switchText = document.getElementById('auth-switch-text');
+            const switchButton = document.getElementById('auth-switch-btn');
+            const closeButton = document.getElementById('auth-modal-close');
+            
+            // Set mode
+            if (mode === 'login') {
+                modalTitle.textContent = 'ログイン';
+                submitButton.textContent = 'ログイン';
+                switchText.textContent = 'アカウントをお持ちでない方は';
+                switchButton.textContent = '新規登録';
+                switchButton.addEventListener('click', () => showAuthModal('register'));
+            } else {
+                modalTitle.textContent = 'アカウント登録';
+                submitButton.textContent = '登録';
+                switchText.textContent = 'アカウントをお持ちの方は';
+                switchButton.textContent = 'ログイン';
+                switchButton.addEventListener('click', () => showAuthModal('login'));
+            }
+            
+            // Form submission
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                
+                const username = document.getElementById('auth-username').value;
+                const password = document.getElementById('auth-password').value;
+                
+                if (mode === 'login') {
+                    login(username, password);
+                } else {
+                    register(username, password);
+                }
+            });
+            
+            // Close button
+            closeButton.addEventListener('click', () => {
+                modal.remove();
+            });
+            
+            // Close on outside click
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+        
+        // Use offline mode
+        function useOfflineMode() {
+            // Load subscriptions from localStorage
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (savedData) {
+                subscriptions = JSON.parse(savedData);
+            }
+            
+            // Initialize UI as if user is logged in, but without actual user
+            currentUser = { id: 'offline', username: 'オフラインモード' };
+            initUI();
+        }
+        
+        // Register new user
+        async function register(username, password) {
+            const errorDisplay = document.getElementById('auth-error');
+            
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Registration successful
+                    currentUser = data.user;
+                    
+                    // Close the modal
+                    document.querySelector('.auth-overlay').remove();
+                    
+                    // Import data from localStorage if any
+                    const localData = localStorage.getItem(STORAGE_KEY);
+                    if (localData) {
+                        const localSubscriptions = JSON.parse(localData);
+                        if (localSubscriptions.length > 0) {
+                            // Ask user if they want to import
+                            if (confirm('ローカルに保存されているサブスクリプションデータが見つかりました。アカウントに取り込みますか？')) {
+                                await importLocalSubscriptions(localSubscriptions);
+                            }
+                        }
+                    }
+                    
+                    // Initialize UI
+                    initUI();
+                } else {
+                    // Show error
+                    errorDisplay.textContent = data.error || 'アカウント登録に失敗しました。';
+                    errorDisplay.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                errorDisplay.textContent = 'サーバーに接続できませんでした。';
+                errorDisplay.classList.remove('hidden');
+            }
+        }
+        
+        // Login user
+        async function login(username, password) {
+            const errorDisplay = document.getElementById('auth-error');
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Login successful
+                    currentUser = data.user;
+                    
+                    // Close the modal
+                    document.querySelector('.auth-overlay').remove();
+                    
+                    // Initialize UI
+                    initUI();
+                } else {
+                    // Show error
+                    errorDisplay.textContent = data.error || 'ログインに失敗しました。';
+                    errorDisplay.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorDisplay.textContent = 'サーバーに接続できませんでした。';
+                errorDisplay.classList.remove('hidden');
+            }
+        }
+        
+        // Logout user
+        async function logout() {
+            try {
+                await fetch('/api/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+            
+            // Clear current user
+            currentUser = null;
+            
+            // Clear subscriptions
+            subscriptions = [];
+            
+            // Initialize UI
+            initUI();
+        }
+        
+        // Import local subscriptions to server
+        async function importLocalSubscriptions(localSubscriptions) {
+            try {
+                for (const subscription of localSubscriptions) {
+                    await createSubscription(
+                        subscription.name,
+                        subscription.fee,
+                        subscription.cycle,
+                        subscription.paymentDay,
+                        subscription.paymentMonth
+                    );
+                }
+                
+                // Clear localStorage after import
+                localStorage.removeItem(STORAGE_KEY);
+            } catch (error) {
+                console.error('Error importing subscriptions:', error);
+                alert('サブスクリプションのインポートに失敗しました。');
+            }
+        }
+        
+        // Toggle payment date fields based on cycle
         function togglePaymentDateFields() {
             if (paymentCycleSelect.value === 'monthly') {
                 monthlyPaymentDateContainer.classList.remove('hidden');
@@ -222,21 +650,13 @@
                 yearlyPaymentDay.setAttribute('required', '');
             }
         }
-
-        /**
-         * Format a number as Japanese Yen
-         * @param {number} amount - The amount to format
-         * @return {string} Formatted amount with yen symbol
-         */
+        
+        // Format a number as Japanese Yen
         function formatYen(amount) {
             return `${amount.toLocaleString()}円`;
         }
         
-        /**
-         * Format payment date based on cycle
-         * @param {Object} subscription - The subscription object
-         * @return {string} Formatted payment date
-         */
+        // Format payment date based on cycle
         function formatPaymentDate(subscription) {
             if (subscription.cycle === 'monthly') {
                 return `毎月${subscription.paymentDay}日`;
@@ -244,11 +664,8 @@
                 return `${subscription.paymentMonth}月${subscription.paymentDay}日`;
             }
         }
-
-        /**
-         * Calculate monthly cost from all subscriptions
-         * @return {number} Total monthly cost
-         */
+        
+        // Calculate monthly cost from all subscriptions
         function calculateMonthlyTotal() {
             return subscriptions.reduce((total, subscription) => {
                 const fee = parseFloat(subscription.fee);
@@ -256,19 +673,14 @@
                 return total + (subscription.cycle === 'yearly' ? fee / 12 : fee);
             }, 0);
         }
-
-        /**
-         * Update the total cost display
-         */
+        
+        // Update the total cost display
         function updateTotalCost() {
             const monthlyTotal = calculateMonthlyTotal();
             totalCostElement.textContent = formatYen(Math.round(monthlyTotal));
         }
         
-        /**
-         * Calculate total payments by month
-         * @return {Object} Map of month to total payments
-         */
+        // Calculate total payments by month
         function calculateMonthlyPayments() {
             const months = {
                 1: '1月', 2: '2月', 3: '3月', 4: '4月', 
@@ -311,9 +723,7 @@
             return result;
         }
         
-        /**
-         * Update the monthly payment summary
-         */
+        // Update the monthly payment summary
         function updateMonthlySummary() {
             const monthlyPayments = calculateMonthlyPayments();
             monthlySummary.innerHTML = '';
@@ -328,98 +738,188 @@
                 monthlySummary.appendChild(monthDiv);
             });
         }
-
-        /**
-         * Save subscriptions to localStorage
-         */
+        
+        // Save subscriptions to localStorage (for offline mode)
         function saveSubscriptions() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(subscriptions));
-        }
-
-        /**
-         * Load subscriptions from localStorage
-         */
-        function loadSubscriptions() {
-            const savedData = localStorage.getItem(STORAGE_KEY);
-            if (savedData) {
-                subscriptions = JSON.parse(savedData);
-                renderSubscriptions();
+            if (currentUser && currentUser.id === 'offline') {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(subscriptions));
             }
-        }
-
-        /**
-         * Add a new subscription
-         * @param {string} name - Subscription name
-         * @param {number} fee - Subscription fee
-         * @param {string} cycle - Payment cycle (monthly/yearly)
-         * @param {number} paymentDay - Day of payment
-         * @param {number} paymentMonth - Month of payment (for yearly cycle)
-         */
-        function addSubscription(name, fee, cycle, paymentDay, paymentMonth = null) {
-            const newSubscription = {
-                id: Date.now().toString(), // Use timestamp as unique ID
-                name: name,
-                fee: fee,
-                cycle: cycle,
-                paymentDay: paymentDay,
-                paymentMonth: paymentMonth
-            };
-            
-            subscriptions.push(newSubscription);
-            saveSubscriptions();
-            renderSubscriptions();
-        }
-
-        /**
-         * Update an existing subscription
-         * @param {string} id - Subscription ID to update
-         * @param {string} name - Subscription name
-         * @param {number} fee - Subscription fee
-         * @param {string} cycle - Payment cycle (monthly/yearly)
-         * @param {number} paymentDay - Day of payment
-         * @param {number} paymentMonth - Month of payment (for yearly cycle)
-         */
-        function updateSubscription(id, name, fee, cycle, paymentDay, paymentMonth = null) {
-            const index = subscriptions.findIndex(sub => sub.id === id);
-            
-            if (index !== -1) {
-                subscriptions[index] = {
-                    ...subscriptions[index],
-                    name: name,
-                    fee: fee,
-                    cycle: cycle,
-                    paymentDay: paymentDay,
-                    paymentMonth: paymentMonth
-                };
-                
-                saveSubscriptions();
-                renderSubscriptions();
-            }
-        }
-
-        /**
-         * Remove a subscription by ID
-         * @param {string} id - Subscription ID to remove
-         */
-        function removeSubscription(id) {
-            subscriptions = subscriptions.filter(sub => sub.id !== id);
-            saveSubscriptions();
-            renderSubscriptions();
         }
         
-        /**
-         * Get subscription by ID
-         * @param {string} id - Subscription ID to get
-         * @return {Object} The subscription object or null
-         */
+        // Load subscriptions from server or localStorage
+        async function loadSubscriptions() {
+            if (currentUser) {
+                if (currentUser.id === 'offline') {
+                    // In offline mode, data is already loaded from localStorage
+                    renderSubscriptions();
+                } else {
+                    // Online mode, load from server
+                    try {
+                        const response = await fetch('/api/subscriptions', {
+                            credentials: 'include'
+                        });
+                        
+                        if (response.ok) {
+                            subscriptions = await response.json();
+                            renderSubscriptions();
+                        } else {
+                            console.error('Failed to load subscriptions');
+                        }
+                    } catch (error) {
+                        console.error('Error loading subscriptions:', error);
+                    }
+                }
+            }
+        }
+        
+        // Create a new subscription
+        async function createSubscription(name, fee, cycle, paymentDay, paymentMonth = null) {
+            if (currentUser) {
+                if (currentUser.id === 'offline') {
+                    // Offline mode, save to localStorage
+                    const newSubscription = {
+                        id: Date.now().toString(),
+                        name,
+                        fee,
+                        cycle,
+                        paymentDay,
+                        paymentMonth
+                    };
+                    
+                    subscriptions.push(newSubscription);
+                    saveSubscriptions();
+                    renderSubscriptions();
+                    return newSubscription;
+                } else {
+                    // Online mode, save to server
+                    try {
+                        const response = await fetch('/api/subscriptions', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                name,
+                                fee,
+                                cycle,
+                                paymentDay,
+                                paymentMonth
+                            }),
+                            credentials: 'include'
+                        });
+                        
+                        if (response.ok) {
+                            const newSubscription = await response.json();
+                            subscriptions.push(newSubscription);
+                            renderSubscriptions();
+                            return newSubscription;
+                        } else {
+                            console.error('Failed to create subscription');
+                            return null;
+                        }
+                    } catch (error) {
+                        console.error('Error creating subscription:', error);
+                        return null;
+                    }
+                }
+            }
+        }
+        
+        // Update an existing subscription
+        async function updateSubscription(id, name, fee, cycle, paymentDay, paymentMonth = null) {
+            if (currentUser) {
+                if (currentUser.id === 'offline') {
+                    // Offline mode, update in localStorage
+                    const index = subscriptions.findIndex(sub => sub.id === id);
+                    
+                    if (index !== -1) {
+                        subscriptions[index] = {
+                            ...subscriptions[index],
+                            name,
+                            fee,
+                            cycle,
+                            paymentDay,
+                            paymentMonth
+                        };
+                        
+                        saveSubscriptions();
+                        renderSubscriptions();
+                        return subscriptions[index];
+                    }
+                    return null;
+                } else {
+                    // Online mode, update on server
+                    try {
+                        const response = await fetch(`/api/subscriptions/${id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                name,
+                                fee,
+                                cycle,
+                                paymentDay,
+                                paymentMonth
+                            }),
+                            credentials: 'include'
+                        });
+                        
+                        if (response.ok) {
+                            const updatedSubscription = await response.json();
+                            const index = subscriptions.findIndex(sub => sub.id === id);
+                            if (index !== -1) {
+                                subscriptions[index] = updatedSubscription;
+                            }
+                            renderSubscriptions();
+                            return updatedSubscription;
+                        } else {
+                            console.error('Failed to update subscription');
+                            return null;
+                        }
+                    } catch (error) {
+                        console.error('Error updating subscription:', error);
+                        return null;
+                    }
+                }
+            }
+        }
+        
+        // Delete a subscription
+        async function removeSubscription(id) {
+            if (currentUser) {
+                if (currentUser.id === 'offline') {
+                    // Offline mode, remove from localStorage
+                    subscriptions = subscriptions.filter(sub => sub.id !== id);
+                    saveSubscriptions();
+                    renderSubscriptions();
+                } else {
+                    // Online mode, delete from server
+                    try {
+                        const response = await fetch(`/api/subscriptions/${id}`, {
+                            method: 'DELETE',
+                            credentials: 'include'
+                        });
+                        
+                        if (response.ok) {
+                            subscriptions = subscriptions.filter(sub => sub.id !== id);
+                            renderSubscriptions();
+                        } else {
+                            console.error('Failed to delete subscription');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting subscription:', error);
+                    }
+                }
+            }
+        }
+        
+        // Get subscription by ID
         function getSubscription(id) {
             return subscriptions.find(sub => sub.id === id) || null;
         }
         
-        /**
-         * Set the form to edit mode for a specific subscription
-         * @param {string} id - Subscription ID to edit
-         */
+        // Set the form to edit mode for a specific subscription
         function editSubscription(id) {
             const subscription = getSubscription(id);
             
@@ -451,9 +951,7 @@
             }
         }
         
-        /**
-         * Reset the form to add mode
-         */
+        // Reset the form to add mode
         function resetForm() {
             // Reset form UI
             formTitle.textContent = '新規サブスクリプション';
@@ -470,12 +968,80 @@
             // Show monthly payment date field
             togglePaymentDateFields();
         }
+        
+        // Handle form submission
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            
+            const nameInput = document.getElementById('subscription-name');
+            const feeInput = document.getElementById('subscription-fee');
+            const cycleSelect = document.getElementById('payment-cycle');
+            
+            const name = nameInput.value.trim();
+            const fee = parseFloat(feeInput.value);
+            const cycle = cycleSelect.value;
+            
+            // Get payment date based on cycle
+            let paymentDay, paymentMonth;
+            
+            if (cycle === 'monthly') {
+                paymentDay = parseInt(monthlyPaymentDate.value);
+                paymentMonth = null;
+            } else {
+                paymentDay = parseInt(yearlyPaymentDay.value);
+                paymentMonth = parseInt(yearlyPaymentMonth.value);
+            }
+            
+            if (name && !isNaN(fee) && fee >= 0 && !isNaN(paymentDay)) {
+                // Check if we're editing or adding
+                const editId = editIdInput.value;
+                
+                if (editId) {
+                    // Update existing subscription
+                    updateSubscription(editId, name, fee, cycle, paymentDay, paymentMonth);
+                    resetForm();
+                } else {
+                    // Add new subscription
+                    createSubscription(name, fee, cycle, paymentDay, paymentMonth);
+                    
+                    // Reset form but keep payment cycle selection
+                    const currentCycle = cycleSelect.value;
+                    nameInput.value = '';
+                    feeInput.value = '';
+                    cycleSelect.value = currentCycle;
+                    
+                    if (cycle === 'monthly') {
+                        monthlyPaymentDate.value = '';
+                    } else {
+                        yearlyPaymentMonth.value = '';
+                        yearlyPaymentDay.value = '';
+                    }
+                    
+                    nameInput.focus();
+                }
+            }
+        }
+        
+        // Handle table actions (Edit and Delete)
+        function handleTableActions(event) {
+            // Check for edit button click
+            const editButton = event.target.closest('button[data-edit-id]');
+            if (editButton) {
+                const id = editButton.getAttribute('data-edit-id');
+                editSubscription(id);
+                return;
+            }
+            
+            // Check for delete button click
+            const deleteButton = event.target.closest('button[data-delete-id]');
+            if (deleteButton) {
+                const id = deleteButton.getAttribute('data-delete-id');
+                removeSubscription(id);
+                return;
+            }
+        }
 
-        /**
-         * Sort subscriptions based on criteria
-         * Priority 1: Payment cycle (yearly first, monthly second)
-         * Priority 2: Payment date
-         */
+        // Sort subscriptions based on criteria
         function sortSubscriptions() {
             // Sort the subscriptions array
             subscriptions.sort((a, b) => {
@@ -500,10 +1066,8 @@
                 return a.name.localeCompare(b.name);
             });
         }
-
-        /**
-         * Render subscriptions to the table
-         */
+        
+        // Render subscriptions to the table
         function renderSubscriptions() {
             // Sort the subscriptions first
             sortSubscriptions();
@@ -560,92 +1124,29 @@
             updateMonthlySummary();
         }
 
-        // Event Listeners
-        
-        // Form submission
-        subscriptionForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            
-            const nameInput = document.getElementById('subscription-name');
-            const feeInput = document.getElementById('subscription-fee');
-            const cycleSelect = document.getElementById('payment-cycle');
-            
-            const name = nameInput.value.trim();
-            const fee = parseFloat(feeInput.value);
-            const cycle = cycleSelect.value;
-            
-            // Get payment date based on cycle
-            let paymentDay, paymentMonth;
-            
-            if (cycle === 'monthly') {
-                paymentDay = parseInt(monthlyPaymentDate.value);
-                paymentMonth = null;
-            } else {
-                paymentDay = parseInt(yearlyPaymentDay.value);
-                paymentMonth = parseInt(yearlyPaymentMonth.value);
-            }
-            
-            if (name && !isNaN(fee) && fee >= 0 && !isNaN(paymentDay)) {
-                // Check if we're editing or adding
-                const editId = editIdInput.value;
+        // Check if user is already logged in
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/user', {
+                    credentials: 'include'
+                });
                 
-                if (editId) {
-                    // Update existing subscription
-                    updateSubscription(editId, name, fee, cycle, paymentDay, paymentMonth);
-                    resetForm();
+                if (response.ok) {
+                    currentUser = await response.json();
                 } else {
-                    // Add new subscription
-                    addSubscription(name, fee, cycle, paymentDay, paymentMonth);
-                    
-                    // Reset form but keep payment cycle selection
-                    const currentCycle = cycleSelect.value;
-                    nameInput.value = '';
-                    feeInput.value = '';
-                    cycleSelect.value = currentCycle;
-                    
-                    if (cycle === 'monthly') {
-                        monthlyPaymentDate.value = '';
-                    } else {
-                        yearlyPaymentMonth.value = '';
-                        yearlyPaymentDay.value = '';
-                    }
-                    
-                    nameInput.focus();
+                    currentUser = null;
                 }
-            }
-        });
-        
-        // Cancel button
-        cancelButton.addEventListener('click', function() {
-            resetForm();
-        });
-        
-        // Table actions (Edit and Delete)
-        tableBody.addEventListener('click', function(event) {
-            // Check for edit button click
-            const editButton = event.target.closest('button[data-edit-id]');
-            if (editButton) {
-                const id = editButton.getAttribute('data-edit-id');
-                editSubscription(id);
-                return;
+            } catch (error) {
+                console.error('Auth check error:', error);
+                currentUser = null;
             }
             
-            // Check for delete button click
-            const deleteButton = event.target.closest('button[data-delete-id]');
-            if (deleteButton) {
-                const id = deleteButton.getAttribute('data-delete-id');
-                removeSubscription(id);
-                return;
-            }
-        });
-        
-        // Payment cycle change
-        paymentCycleSelect.addEventListener('change', togglePaymentDateFields);
+            initUI();
+        }
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            loadSubscriptions();
-            togglePaymentDateFields();
+            checkAuth();
         });
     </script>
 </body>
