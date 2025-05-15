@@ -45,7 +45,7 @@ login_manager.login_view = 'login'
 class User(UserMixin, db.Model):
     id = db.Column(db.String(36), primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128))
+    password_hash = db.Column(db.String(256))  # サイズを増やす
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     subscriptions = db.relationship('Subscription', backref='user', lazy=True, cascade="all, delete-orphan")
