@@ -723,6 +723,7 @@
                     await createSubscription(
                         subscription.name,
                         subscription.fee,
+                                currency,
                         subscription.cycle,
                         subscription.paymentDay,
                         subscription.paymentMonth
@@ -889,6 +890,7 @@
                         id: Date.now().toString(),
                         name,
                         fee,
+                                currency,
                         currency,
                         cycle,
                         paymentDay,
@@ -910,6 +912,8 @@
                             body: JSON.stringify({
                                 name,
                                 fee,
+                                currency,
+                                currency,
                                 cycle,
                                 paymentDay,
                                 paymentMonth
@@ -935,7 +939,7 @@
         }
         
         // Update an existing subscription
-        async function updateSubscription(id, name, fee, cycle, paymentDay, paymentMonth = null) {
+        async function updateSubscription(id, name, fee, currency, cycle, paymentDay, paymentMonth = null) {
             if (currentUser) {
                 if (currentUser.id === 'offline') {
                     // Offline mode, update in localStorage
@@ -946,6 +950,8 @@
                             ...subscriptions[index],
                             name,
                             fee,
+                                currency,
+                            currency,
                             cycle,
                             paymentDay,
                             paymentMonth
@@ -967,6 +973,7 @@
                             body: JSON.stringify({
                                 name,
                                 fee,
+                                currency,
                                 cycle,
                                 paymentDay,
                                 paymentMonth
