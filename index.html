@@ -768,9 +768,14 @@
         // Calculate monthly cost from all subscriptions
         function calculateMonthlyTotal() {
             return subscriptions.reduce((total, subscription) => {
+                const origCurrency = subscription.currency || 'JPY';
                 const fee = parseFloat(subscription.fee);
+                
+                // 全て表示通貨に変換
+                const convertedFee = convertCurrency(fee, origCurrency, displayCurrency);
+                
                 // Convert yearly payments to monthly
-                return total + (subscription.cycle === 'yearly' ? fee / 12 : fee);
+                return total + (subscription.cycle === 'yearly' ? convertedFee / 12 : convertedFee);
             }, 0);
         }
         
@@ -797,17 +802,20 @@
             
             // Add each subscription's payment to appropriate month(s)
             subscriptions.forEach(subscription => {
+                const origCurrency = subscription.currency || 'JPY';
                 const fee = parseFloat(subscription.fee);
+                // 表示通貨に変換
+                const convertedFee = convertCurrency(fee, origCurrency, displayCurrency);
                 
                 if (subscription.cycle === 'monthly') {
                     // Monthly payments affect all months equally
                     for (let i = 1; i <= 12; i++) {
-                        monthlyPayments[i] += fee;
+                        monthlyPayments[i] += convertedFee;
                     }
                 } else {
                     // Yearly payments only affect the specific month
                     const month = parseInt(subscription.paymentMonth);
-                    monthlyPayments[month] += fee;
+                    monthlyPayments[month] += convertedFee;
                 }
             });
             
@@ -833,7 +841,7 @@
                 monthDiv.className = 'bg-gray-100 p-3 rounded-md';
                 monthDiv.innerHTML = `
                     <div class="text-sm font-medium text-gray-700">${month.month}</div>
-                    <div class="text-lg font-bold ${month.total > 0 ? 'text-blue-600' : 'text-gray-400'}">${formatYen(month.total)}</div>
+                    <div class="text-lg font-bold ${month.total > 0 ? 'text-blue-600' : 'text-gray-400'}">${formatCurrency(month.total, displayCurrency)}</div>
                 `;
                 monthlySummary.appendChild(monthDiv);
             });
@@ -1076,10 +1084,12 @@
             const nameInput = document.getElementById('subscription-name');
             const feeInput = document.getElementById('subscription-fee');
             const cycleSelect = document.getElementById('payment-cycle');
+            const currencySelect = document.getElementById('subscription-currency');
             
             const name = nameInput.value.trim();
             const fee = parseFloat(feeInput.value);
             const cycle = cycleSelect.value;
+            const currency = currencySelect.value;
             
             // Get payment date based on cycle
             let paymentDay, paymentMonth;
@@ -1098,11 +1108,11 @@
                 
                 if (editId) {
                     // Update existing subscription
-                    updateSubscription(editId, name, fee, cycle, paymentDay, paymentMonth);
+                    updateSubscription(editId, name, fee, currency, cycle, paymentDay, paymentMonth);
                     resetForm();
                 } else {
                     // Add new subscription
-                    createSubscription(name, fee, cycle, paymentDay, paymentMonth);
+                    createSubscription(name, fee, currency, cycle, paymentDay, paymentMonth);
                     
                     // Reset form but keep payment cycle selection
                     const currentCycle = cycleSelect.value;
