@@ -19,8 +19,22 @@ logging.basicConfig(level=logging.INFO)
 # アプリケーションの初期化
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-for-testing')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+
+# データベースURL修正
+database_url = os.environ.get('DATABASE_URL')
+# URLにsslmodeが含まれている場合は修正
+if database_url and 'postgresql' in database_url:
+    if '?' in database_url:
+        # すでにクエリパラメータがある場合
+        database_url = database_url.split('?')[0]
+    database_url += '?sslmode=prefer'
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+    'connect_args': {'connect_timeout': 10}
+}
 
 db = SQLAlchemy(app)
 CORS(app, supports_credentials=True)
@@ -192,7 +206,14 @@ def delete_subscription(subscription_id):
 
 # データベース初期化
 with app.app_context():
-    db.create_all()
+    # 既存のテーブルを一度削除して再作成
+    try:
+        logging.info("データベーステーブルを再作成しています...")
+        db.drop_all()
+        db.create_all()
+        logging.info("データベーステーブルの作成が完了しました")
+    except Exception as e:
+        logging.error(f"データベース初期化エラー: {e}")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
