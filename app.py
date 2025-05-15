@@ -6,7 +6,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import json
 import uuid
+import logging
 from datetime import datetime
+from dotenv import load_dotenv
+
+# 環境変数の読み込み
+load_dotenv()
+
+# ロギングの設定
+logging.basicConfig(level=logging.INFO)
 
 # アプリケーションの初期化
 app = Flask(__name__)
@@ -64,6 +72,11 @@ def load_user(user_id):
 def index():
     return send_from_directory('.', 'index.html')
 
+# 追加：静的ファイルアクセス用ルート
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('.', path)
+
 # ユーザー登録API
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -85,8 +98,12 @@ def register():
     return jsonify({'success': True, 'user': {'id': user.id, 'username': user.username}}), 201
 
 # ログインAPI
-@app.route('/api/login', methods=['POST'])
+@app.route('/api/login', methods=['GET', 'POST'])
 def login():
+    if request.method == 'GET':
+        # GETリクエストの場合はHTMLページに戻る
+        return redirect('/')
+    
     data = request.get_json()
     
     user = User.query.filter_by(username=data['username']).first()

@@ -1127,13 +1127,18 @@
         // Check if user is already logged in
         async function checkAuth() {
             try {
+                console.log('Checking authentication status...');
                 const response = await fetch('/api/user', {
                     credentials: 'include'
                 });
                 
+                console.log('Auth response status:', response.status);
+                
                 if (response.ok) {
                     currentUser = await response.json();
+                    console.log('User is logged in:', currentUser);
                 } else {
+                    console.log('User is not logged in');
                     currentUser = null;
                 }
             } catch (error) {
@@ -1141,7 +1146,9 @@
                 currentUser = null;
             }
             
-            initUI();
+            console.log('Initializing UI...');
+            // 初期状態ではオフラインモードを選択
+            useOfflineMode();
         }
         
         // Initialize
