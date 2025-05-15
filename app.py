@@ -7,6 +7,8 @@ import os
 import json
 import uuid
 import logging
+import requests
+import time
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -60,6 +62,7 @@ class Subscription(db.Model):
     id = db.Column(db.String(36), primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     fee = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(3), default='JPY', nullable=False)  # 'JPY' または 'USD'
     cycle = db.Column(db.String(20), nullable=False)  # 'monthly' または 'yearly'
     payment_day = db.Column(db.Integer, nullable=False)
     payment_month = db.Column(db.Integer, nullable=True)  # 年払いの場合に使用
@@ -71,6 +74,7 @@ class Subscription(db.Model):
             'id': self.id,
             'name': self.name,
             'fee': self.fee,
+            'currency': self.currency,
             'cycle': self.cycle,
             'paymentDay': self.payment_day,
             'paymentMonth': self.payment_month,
@@ -141,6 +145,51 @@ def logout():
 def get_user():
     return jsonify({'id': current_user.id, 'username': current_user.username})
 
+# 為替レート取得API
+@app.route('/api/exchange-rate', methods=['GET'])
+def get_exchange_rate():
+    # キャッシュキー
+    cache_key = 'exchange_rate_cache'
+    cache_timeout = 3600  # 1時間キャッシュ
+    
+    # セッションからキャッシュを取得
+    exchange_cache = session.get(cache_key)
+    
+    # キャッシュが有効かチェック
+    if exchange_cache and time.time() < exchange_cache.get('expires_at', 0):
+        return jsonify(exchange_cache['data'])
+    
+    try:
+        # 為替レートAPIを呼び出す（無料）
+        response = requests.get('https://open.er-api.com/v6/latest/USD')
+        
+        if response.status_code == 200:
+            data = response.json()
+            rate_usd_to_jpy = data['rates']['JPY']
+            rate_jpy_to_usd = 1 / rate_usd_to_jpy
+            
+            result = {
+                'USD_JPY': rate_usd_to_jpy,
+                'JPY_USD': rate_jpy_to_usd,
+                'timestamp': data['time_last_update_unix'],
+                'date': data['time_last_update_utc']
+            }
+            
+            # キャッシュに保存
+            session[cache_key] = {
+                'data': result,
+                'expires_at': time.time() + cache_timeout
+            }
+            
+            return jsonify(result)
+        else:
+            # APIが失敗した場合、デフォルト値を返す
+            return jsonify({'error': 'Failed to fetch exchange rate', 'USD_JPY': 130, 'JPY_USD': 0.0077}), 500
+    except Exception as e:
+        logging.error(f"為替レート取得エラー: {e}")
+        # エラーが発生した場合、デフォルト値を返す
+        return jsonify({'error': str(e), 'USD_JPY': 130, 'JPY_USD': 0.0077}), 500
+
 # サブスクリプション取得API
 @app.route('/api/subscriptions', methods=['GET'])
 @login_required
@@ -158,6 +207,7 @@ def create_subscription():
         id=str(uuid.uuid4()),
         name=data['name'],
         fee=data['fee'],
+        currency=data.get('currency', 'JPY'),
         cycle=data['cycle'],
         payment_day=data['paymentDay'],
         payment_month=data.get('paymentMonth'),
@@ -182,6 +232,7 @@ def update_subscription(subscription_id):
     
     subscription.name = data['name']
     subscription.fee = data['fee']
+    subscription.currency = data.get('currency', 'JPY')
     subscription.cycle = data['cycle']
     subscription.payment_day = data['paymentDay']
     subscription.payment_month = data.get('paymentMonth')
