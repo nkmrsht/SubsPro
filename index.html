@@ -754,10 +754,7 @@
             }
         }
         
-        // Format a number as Japanese Yen
-        function formatYen(amount) {
-            return `${amount.toLocaleString()}円`;
-        }
+        // この関数は formatCurrency に置き換えられました
         
         // Format payment date based on cycle
         function formatPaymentDate(subscription) {
@@ -780,7 +777,7 @@
         // Update the total cost display
         function updateTotalCost() {
             const monthlyTotal = calculateMonthlyTotal();
-            totalCostElement.textContent = formatYen(Math.round(monthlyTotal));
+            totalCostElement.textContent = formatCurrency(monthlyTotal, displayCurrency);
         }
         
         // Calculate total payments by month
@@ -1188,12 +1185,22 @@
             // Add subscription rows
             subscriptions.forEach(subscription => {
                 const row = document.createElement('tr');
+                
+                // 元の通貨から表示通貨に変換
+                const origCurrency = subscription.currency || 'JPY';
+                const displayAmount = convertCurrency(subscription.fee, origCurrency, displayCurrency);
+                
                 row.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         ${subscription.name}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${formatYen(subscription.fee)}
+                        ${formatCurrency(displayAmount, displayCurrency)}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${origCurrency === 'JPY' ? 'bg-indigo-100 text-indigo-800' : 'bg-yellow-100 text-yellow-800'}">
+                            ${origCurrency}
+                        </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${subscription.cycle === 'monthly' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}">
