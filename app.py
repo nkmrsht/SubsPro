@@ -257,14 +257,26 @@ def delete_subscription(subscription_id):
 
 # データベース初期化
 with app.app_context():
-    # 既存のテーブルを一度削除して再作成
+    # テーブルが存在しない場合のみ作成（既存データを保持）
     try:
-        logging.info("データベーステーブルを再作成しています...")
-        db.drop_all()
+        logging.info("データベーステーブルを確認しています...")
         db.create_all()
-        logging.info("データベーステーブルの作成が完了しました")
+        logging.info("データベーステーブルの確認が完了しました")
     except Exception as e:
         logging.error(f"データベース初期化エラー: {e}")
+
+# 管理者用API - 登録ユーザー一覧の取得（開発環境のみ）
+@app.route('/api/admin/users', methods=['GET'])
+def admin_get_users():
+    # 本番環境では無効化する仕組みを追加することを推奨
+    users = User.query.all()
+    user_list = [{
+        'id': user.id,
+        'username': user.username,
+        'created_at': user.created_at.isoformat() if user.created_at else None,
+        'subscription_count': len(user.subscriptions)
+    } for user in users]
+    return jsonify(user_list)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
