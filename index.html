@@ -1273,8 +1273,21 @@
                 console.log('Auth response status:', response.status);
                 
                 if (response.ok) {
-                    currentUser = await response.json();
-                    console.log('User is logged in:', currentUser);
+                    try {
+                        const responseText = await response.text();
+                        try {
+                            // レスポンスがJSONかどうか確認
+                            currentUser = JSON.parse(responseText);
+                            console.log('User is logged in:', currentUser);
+                        } catch (jsonError) {
+                            console.error('JSON parse error:', jsonError);
+                            // JSONでない場合はログアウト状態とみなす
+                            currentUser = null;
+                        }
+                    } catch (textError) {
+                        console.error('Response text error:', textError);
+                        currentUser = null;
+                    }
                 } else {
                     console.log('User is not logged in');
                     currentUser = null;
