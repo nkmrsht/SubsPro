@@ -50,6 +50,11 @@
                 <p class="text-xl font-semibold text-gray-700">スマートサブスク管理</p>
             </div>
             <div class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
+                <div id="user-controls" class="flex items-center mb-2 md:mb-0 space-x-4">
+                    <div id="user-name" class="text-sm font-medium text-gray-700 hidden"></div>
+                    <a href="/admin.html" id="admin-link" class="text-indigo-600 hover:text-indigo-800 text-sm hidden">管理者画面</a>
+                    <button id="logout-button" onclick="logout()" class="text-indigo-600 hover:text-indigo-800 text-sm hidden">ログアウト</button>
+                </div>
                 <div class="flex items-center space-x-2">
                     <label for="display-currency" class="text-sm font-medium text-gray-600">表示通貨:</label>
                     <select 
