@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, session, redirect, url_for, send_from_directory
+from flask import Flask, request, jsonify, session, redirect, url_for, send_from_directory, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_cors import CORS
@@ -9,6 +9,9 @@ import uuid
 import logging
 import requests
 import time
+import io
+import shutil
+import sqlite3
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -18,25 +21,21 @@ load_dotenv()
 # ロギングの設定
 logging.basicConfig(level=logging.INFO)
 
+# 永続データディレクトリの設定
+PERSISTENT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'persistent_data')
+if not os.path.exists(PERSISTENT_DIR):
+    os.makedirs(PERSISTENT_DIR)
+
+# SQLiteデータベースファイルのパス
+SQLITE_DB_PATH = os.path.join(PERSISTENT_DIR, 'subspro.db')
+
 # アプリケーションの初期化
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-for-testing')
 
-# データベースURL修正
-database_url = os.environ.get('DATABASE_URL')
-# URLにsslmodeが含まれている場合は修正
-if database_url and 'postgresql' in database_url:
-    if '?' in database_url:
-        # すでにクエリパラメータがある場合
-        database_url = database_url.split('?')[0]
-    database_url += '?sslmode=prefer'
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+# SQLiteデータベース設定
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{SQLITE_DB_PATH}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_pre_ping': True,
-    'pool_recycle': 300,
-    'connect_args': {'connect_timeout': 10}
-}
 
 db = SQLAlchemy(app)
 CORS(app, supports_credentials=True)
@@ -277,6 +276,114 @@ def admin_get_users():
         'subscription_count': len(user.subscriptions)
     } for user in users]
     return jsonify(user_list)
+
+# データベースのバックアップ用API
+@app.route('/api/admin/backup', methods=['GET'])
+def backup_database():
+    try:
+        # データベースファイルのコピーを作成
+        backup_file = os.path.join(PERSISTENT_DIR, f'subspro_backup_{int(time.time())}.db')
+        shutil.copy2(SQLITE_DB_PATH, backup_file)
+        
+        # データエクスポート用のJSONデータを作成
+        users = User.query.all()
+        export_data = []
+        
+        for user in users:
+            user_data = {
+                'username': user.username,
+                'password_hash': user.password_hash,
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'subscriptions': []
+            }
+            
+            for sub in user.subscriptions:
+                sub_data = {
+                    'name': sub.name,
+                    'fee': sub.fee,
+                    'currency': sub.currency,
+                    'cycle': sub.cycle,
+                    'payment_day': sub.payment_day,
+                    'payment_month': sub.payment_month,
+                    'created_at': sub.created_at.isoformat() if sub.created_at else None
+                }
+                user_data['subscriptions'].append(sub_data)
+            
+            export_data.append(user_data)
+        
+        # JSONファイルをメモリに作成
+        json_data = json.dumps(export_data, indent=2, ensure_ascii=False)
+        json_file = io.BytesIO(json_data.encode('utf-8'))
+        
+        # JSONファイルをダウンロード
+        return send_file(
+            json_file,
+            mimetype='application/json',
+            as_attachment=True,
+            download_name=f'subspro_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+        )
+    except Exception as e:
+        logging.error(f"バックアップエラー: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# データベースの復元用API
+@app.route('/api/admin/restore', methods=['POST'])
+def restore_database():
+    if 'backup_file' not in request.files:
+        return jsonify({'error': 'バックアップファイルが見つかりません'}), 400
+    
+    file = request.files['backup_file']
+    
+    if file.filename == '':
+        return jsonify({'error': 'ファイルが選択されていません'}), 400
+    
+    try:
+        # JSONデータを解析
+        json_data = json.loads(file.read().decode('utf-8'))
+        
+        # 既存のデータをクリア
+        Subscription.query.delete()
+        User.query.delete()
+        db.session.commit()
+        
+        # ユーザーとサブスクリプションを復元
+        for user_data in json_data:
+            user = User(
+                id=str(uuid.uuid4()),
+                username=user_data['username'],
+                password_hash=user_data['password_hash']
+            )
+            
+            if user_data.get('created_at'):
+                user.created_at = datetime.fromisoformat(user_data['created_at'])
+            
+            db.session.add(user)
+            db.session.flush()  # IDを取得するためにフラッシュ
+            
+            for sub_data in user_data.get('subscriptions', []):
+                subscription = Subscription(
+                    id=str(uuid.uuid4()),
+                    name=sub_data['name'],
+                    fee=sub_data['fee'],
+                    currency=sub_data.get('currency', 'JPY'),
+                    cycle=sub_data['cycle'],
+                    payment_day=sub_data['payment_day'],
+                    payment_month=sub_data.get('payment_month'),
+                    user_id=user.id
+                )
+                
+                if sub_data.get('created_at'):
+                    subscription.created_at = datetime.fromisoformat(sub_data['created_at'])
+                
+                db.session.add(subscription)
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'データベースが正常に復元されました'})
+    
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"復元エラー: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

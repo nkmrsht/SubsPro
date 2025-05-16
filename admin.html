@@ -31,7 +31,7 @@
     <main class="container mx-auto px-4 py-8">
         <div class="bg-white rounded-lg shadow p-6 mb-6">
             <h2 class="text-xl font-bold mb-4 text-gray-800">ユーザー統計</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div class="bg-indigo-50 p-4 rounded-lg">
                     <p class="text-sm text-indigo-600">総ユーザー数</p>
                     <p class="text-2xl font-bold" id="total-users">-</p>
@@ -43,6 +43,28 @@
                 <div class="bg-blue-50 p-4 rounded-lg">
                     <p class="text-sm text-blue-600">平均サブスクリプション数/ユーザー</p>
                     <p class="text-2xl font-bold" id="avg-subscriptions">-</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1 bg-green-50 p-4 rounded-lg">
+                    <h3 class="text-md font-bold text-green-800 mb-2">データバックアップ</h3>
+                    <p class="text-sm text-green-600 mb-3">現在のデータをJSONファイルとしてエクスポートします。いつでも復元できます。</p>
+                    <a href="/api/admin/backup" class="inline-block bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
+                        バックアップをダウンロード
+                    </a>
+                </div>
+                
+                <div class="flex-1 bg-orange-50 p-4 rounded-lg">
+                    <h3 class="text-md font-bold text-orange-800 mb-2">データ復元</h3>
+                    <p class="text-sm text-orange-600 mb-3">以前バックアップしたJSONファイルからデータを復元します。<strong>既存のデータは上書きされます。</strong></p>
+                    <form id="restore-form" enctype="multipart/form-data" class="flex flex-col space-y-3">
+                        <input type="file" id="backup-file" name="backup_file" accept=".json" class="border rounded p-1 text-sm" required>
+                        <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors">
+                            復元する
+                        </button>
+                    </form>
+                    <p id="restore-message" class="mt-2 text-sm"></p>
                 </div>
             </div>
         </div>
@@ -89,6 +111,7 @@
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
             refreshUserList();
+            setupRestoreForm();
         });
         
         // ユーザーリストの取得と表示
@@ -161,6 +184,49 @@
                 day: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit'
+            });
+        }
+        
+        // データ復元フォームの設定
+        function setupRestoreForm() {
+            const form = document.getElementById('restore-form');
+            const messageElement = document.getElementById('restore-message');
+            
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                if (!confirm('本当にデータを復元しますか？既存のデータは上書きされます。')) {
+                    return;
+                }
+                
+                const formData = new FormData(form);
+                
+                try {
+                    messageElement.textContent = '復元中...';
+                    messageElement.className = 'mt-2 text-sm text-blue-600';
+                    
+                    const response = await fetch('/api/admin/restore', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        messageElement.textContent = result.message || 'データが正常に復元されました。';
+                        messageElement.className = 'mt-2 text-sm text-green-600';
+                        
+                        // リストを更新
+                        setTimeout(refreshUserList, 500);
+                    } else {
+                        messageElement.textContent = result.error || '復元中にエラーが発生しました。';
+                        messageElement.className = 'mt-2 text-sm text-red-600';
+                    }
+                } catch (error) {
+                    console.error('復元エラー:', error);
+                    messageElement.textContent = 'データ復元中にエラーが発生しました。';
+                    messageElement.className = 'mt-2 text-sm text-red-600';
+                }
             });
         }
     </script>
