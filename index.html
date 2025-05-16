@@ -313,7 +313,8 @@
 
     <!-- User Controls (Logged in) Template -->
     <template id="user-controls-logged-in-template">
-        <div class="flex items-center space-x-4">
+        <!-- デスクトップ表示用 (md以上の画面サイズ) -->
+        <div class="hidden md:flex items-center space-x-4">
             <div class="text-right">
                 <p class="text-sm text-gray-600">ログイン中：</p>
                 <p class="font-medium text-gray-800" id="username-display"></p>
@@ -342,9 +343,46 @@
             >
                 ログアウト
             </button>
-            <!-- 非表示のファイル入力 -->
-            <input type="file" id="restore-file-input" accept=".json" style="display: none;">
         </div>
+
+        <!-- モバイル表示用 (md未満の画面サイズ) -->
+        <div class="md:hidden">
+            <div class="flex items-center justify-between mb-2">
+                <div>
+                    <p class="text-sm text-gray-600">ログイン中：</p>
+                    <p class="font-medium text-gray-800" id="username-display-mobile"></p>
+                </div>
+                <button 
+                    id="logout-button-mobile" 
+                    class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-2 rounded-md transition duration-300"
+                >
+                    ログアウト
+                </button>
+            </div>
+            <div class="flex space-x-2">
+                <a 
+                    href="/admin.html" 
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-1.5 px-2 rounded-md transition duration-300 flex-1 text-center"
+                >
+                    管理画面
+                </a>
+                <button 
+                    id="backup-user-button-mobile" 
+                    class="bg-green-600 hover:bg-green-700 text-white text-sm py-1.5 px-2 rounded-md transition duration-300 flex-1"
+                >
+                    バックアップ
+                </button>
+                <button 
+                    id="restore-user-button-mobile" 
+                    class="bg-yellow-600 hover:bg-yellow-700 text-white text-sm py-1.5 px-2 rounded-md transition duration-300 flex-1"
+                >
+                    復元
+                </button>
+            </div>
+        </div>
+        
+        <!-- 非表示のファイル入力 (共通) -->
+        <input type="file" id="restore-file-input" accept=".json" style="display: none;">
     </template>
 
     <!-- Guest Welcome Template -->
