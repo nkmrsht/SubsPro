@@ -1384,6 +1384,102 @@
             }
         }
         
+        // ユーザーデータのバックアップを実行
+        async function backupUserData() {
+            try {
+                // APIを呼び出してバックアップを取得
+                const response = await fetch('/api/user/backup', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`バックアップの取得に失敗しました: ${response.status}`);
+                }
+                
+                // Blobとしてレスポンスを取得
+                const blob = await response.blob();
+                
+                // ダウンロードリンクを作成
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                
+                // Content-Dispositionヘッダーからファイル名を取得するか、デフォルト名を使用
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'subspro_backup.json';
+                
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                    if (filenameMatch && filenameMatch[1]) {
+                        filename = filenameMatch[1].replace(/['"]/g, '');
+                    }
+                }
+                
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                
+                // クリーンアップ
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                // 成功メッセージ
+                showError('バックアップが正常に作成されました');
+            } catch (error) {
+                console.error('バックアップエラー:', error);
+                showError(`バックアップエラー: ${error.message}`);
+            }
+        }
+        
+        // ユーザーデータの復元を実行
+        async function restoreUserData(event) {
+            try {
+                const fileInput = event.target;
+                if (!fileInput.files || !fileInput.files[0]) {
+                    throw new Error('ファイルが選択されていません');
+                }
+                
+                // 確認ダイアログ
+                if (!confirm('バックアップからデータを復元すると、現在のデータが上書きされます。続行しますか？')) {
+                    fileInput.value = ''; // ファイル選択をリセット
+                    return;
+                }
+                
+                const file = fileInput.files[0];
+                const formData = new FormData();
+                formData.append('backup_file', file);
+                
+                // API呼び出しでデータを復元
+                const response = await fetch('/api/user/restore', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || '復元に失敗しました');
+                }
+                
+                const result = await response.json();
+                
+                // 成功メッセージ
+                showError(result.message || 'データが正常に復元されました');
+                
+                // UIを更新
+                fetchSubscriptions();
+                
+            } catch (error) {
+                console.error('復元エラー:', error);
+                showError(`復元エラー: ${error.message}`);
+            } finally {
+                // ファイル入力をリセット
+                event.target.value = '';
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             checkAuth();
