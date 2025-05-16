@@ -618,6 +618,61 @@
             initUI();
         }
         
+        // オンラインモードを使用する
+        function useOnlineMode() {
+            // UI初期化
+            initUI();
+            
+            // オンラインデータを取得
+            fetchSubscriptions();
+        }
+        
+        // サーバーからサブスクリプションデータを取得
+        async function fetchSubscriptions() {
+            try {
+                const response = await fetch('/api/subscriptions', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    subscriptions = data;
+                    renderSubscriptionList();
+                    updateMonthlySummary();
+                    saveTempDataToLocalStorage(); // バックアップとしてローカルにも保存
+                } else {
+                    console.error('サブスクリプションの取得に失敗しました:', response.status);
+                    showError('サーバーからデータを取得できませんでした。');
+                }
+            } catch (error) {
+                console.error('サブスクリプション取得エラー:', error);
+                showError('通信エラーが発生しました。');
+            }
+        }
+        
+        // オンラインデータをローカルにもバックアップ
+        function saveTempDataToLocalStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY + '_online_backup', JSON.stringify(subscriptions));
+            } catch (error) {
+                console.error('ローカルストレージへの保存エラー:', error);
+            }
+        }
+        
+        // エラーメッセージを表示
+        function showError(message, duration = 3000) {
+            const errorElement = document.createElement('div');
+            errorElement.className = 'fixed bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded';
+            errorElement.textContent = message;
+            
+            document.body.appendChild(errorElement);
+            
+            // 一定時間後に自動で消える
+            setTimeout(() => {
+                errorElement.remove();
+            }, duration);
+        }
+        
         // Register new user
         async function register(username, password) {
             const errorDisplay = document.getElementById('auth-error');
