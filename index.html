@@ -243,25 +243,31 @@
         </div>
 
         <!-- Subscription List -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8 max-w-5xl mx-auto overflow-hidden">
+        <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-8 max-w-5xl mx-auto overflow-hidden">
             <h2 class="text-xl font-semibold text-gray-800 mb-4">サブスクリプション一覧</h2>
             
-            <div class="overflow-x-auto">
+            <!-- テーブル表示 (デスクトップ/タブレット用) - md以上で表示 -->
+            <div class="hidden md:block overflow-x-auto">
                 <table id="subscription-table" class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">サブスク名</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">料金</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">通貨</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">支払いサイクル</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">支払い日</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">サブスク名</th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">料金</th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">通貨</th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">支払いサイクル</th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">支払い日</th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         <!-- Subscription rows will be added here by JavaScript -->
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- モバイル表示用のカードレイアウト - md未満で表示 -->
+            <div id="subscription-cards" class="md:hidden space-y-4">
+                <!-- Subscription cards will be added here by JavaScript -->
             </div>
             
             <!-- Empty state message -->
