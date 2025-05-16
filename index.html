@@ -277,16 +277,16 @@
         </div>
 
         <!-- Monthly Payment Summary -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8 max-w-5xl mx-auto">
+        <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-8 max-w-5xl mx-auto">
             <h2 class="text-xl font-semibold text-gray-800 mb-4">月ごとの支払い合計</h2>
-            <div id="monthly-summary" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div id="monthly-summary" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                 <!-- Monthly summaries will be added here by JavaScript -->
             </div>
         </div>
 
         <!-- Total Monthly Cost -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8 max-w-5xl mx-auto">
-            <div class="flex justify-between items-center">
+        <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-8 max-w-5xl mx-auto">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                 <h2 class="text-xl font-semibold text-gray-800">月換算の合計</h2>
                 <p id="total-cost" class="text-2xl font-bold text-blue-600">0円</p>
             </div>
@@ -954,10 +954,10 @@
             
             monthlyPayments.forEach(month => {
                 const monthDiv = document.createElement('div');
-                monthDiv.className = 'bg-gray-100 p-3 rounded-md';
+                monthDiv.className = 'bg-gray-100 p-3 rounded-md shadow-sm border border-gray-200';
                 monthDiv.innerHTML = `
                     <div class="text-sm font-medium text-gray-700">${month.month}</div>
-                    <div class="text-lg font-bold ${month.total > 0 ? 'text-blue-600' : 'text-gray-400'}">${formatCurrency(month.total, displayCurrency)}</div>
+                    <div class="text-base sm:text-lg font-bold ${month.total > 0 ? 'text-blue-600' : 'text-gray-400'}">${formatCurrency(month.total, displayCurrency)}</div>
                 `;
                 monthlySummary.appendChild(monthDiv);
             });
