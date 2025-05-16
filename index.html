@@ -1298,8 +1298,14 @@
             }
             
             console.log('Initializing UI...');
-            // 初期状態ではオフラインモードを選択
-            useOfflineMode();
+            // ログイン状態に応じてモードを選択
+            if (currentUser) {
+                // ログイン中はオンラインモード
+                useOnlineMode();
+            } else {
+                // 未ログイン時はオフラインモード
+                useOfflineMode();
+            }
         }
         
         // Initialize
