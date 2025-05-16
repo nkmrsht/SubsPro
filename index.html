@@ -319,11 +319,25 @@
                 管理画面
             </a>
             <button 
+                id="backup-user-button" 
+                class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition duration-300"
+            >
+                バックアップ
+            </button>
+            <button 
+                id="restore-user-button" 
+                class="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-md transition duration-300"
+            >
+                復元
+            </button>
+            <button 
                 id="logout-button" 
                 class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md transition duration-300"
             >
                 ログアウト
             </button>
+            <!-- 非表示のファイル入力 -->
+            <input type="file" id="restore-file-input" accept=".json" style="display: none;">
         </div>
     </template>
 
@@ -462,6 +476,13 @@
                 
                 // Set logout button handler
                 document.getElementById('logout-button').addEventListener('click', logout);
+                
+                // バックアップと復元ボタンのイベントハンドラを設定
+                document.getElementById('backup-user-button').addEventListener('click', backupUserData);
+                document.getElementById('restore-user-button').addEventListener('click', function() {
+                    document.getElementById('restore-file-input').click();
+                });
+                document.getElementById('restore-file-input').addEventListener('change', restoreUserData);
                 
                 // Show main content
                 const mainContentTemplate = document.getElementById('main-content-template');
