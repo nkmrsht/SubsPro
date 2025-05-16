@@ -544,14 +544,24 @@
             displayCurrencySelector = document.getElementById('display-currency');
             
             // 入力通貨に応じてステップ（小数点精度）を変更する
+            const feeInput = document.getElementById('subscription-fee');
+            
+            // 初期値を設定
+            updateFeeInputStep(subscriptionCurrency.value);
+            
+            // 通貨変更時にステップを更新
             subscriptionCurrency.addEventListener('change', function(e) {
-                const feeInput = document.getElementById('subscription-fee');
-                if (e.target.value === 'USD') {
+                updateFeeInputStep(e.target.value);
+            });
+            
+            // 料金入力フィールドのステップを更新する関数
+            function updateFeeInputStep(currencyValue) {
+                if (currencyValue === 'USD') {
                     feeInput.step = '0.01'; // ドルは小数点第2位まで
                 } else {
                     feeInput.step = '1'; // 円は整数のみ
                 }
-            });
+            }
             
             // 表示通貨切り替えイベントを設定
             if (displayCurrencySelector) {
@@ -1147,8 +1157,27 @@
                 // Set form values
                 editIdInput.value = subscription.id;
                 document.getElementById('subscription-name').value = subscription.name;
-                document.getElementById('subscription-fee').value = subscription.fee;
-                document.getElementById('subscription-currency').value = subscription.currency || 'JPY';
+                
+                const feeInput = document.getElementById('subscription-fee');
+                const currencySelect = document.getElementById('subscription-currency');
+                
+                // 通貨の選択を設定
+                currencySelect.value = subscription.currency || 'JPY';
+                
+                // 通貨に応じたステップ値を設定
+                if (currencySelect.value === 'USD') {
+                    feeInput.step = '0.01'; // ドルは小数点第2位まで
+                } else {
+                    feeInput.step = '1'; // 円は整数のみ
+                }
+                
+                // 料金を設定（USDなら小数点第2位まで、JPYなら整数）
+                if (currencySelect.value === 'USD') {
+                    feeInput.value = parseFloat(subscription.fee).toFixed(2);
+                } else {
+                    feeInput.value = Math.round(subscription.fee);
+                }
+                
                 document.getElementById('payment-cycle').value = subscription.cycle;
                 
                 // Set payment date fields
