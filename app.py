@@ -277,13 +277,21 @@ def admin_get_users():
     } for user in users]
     return jsonify(user_list)
 
-# 管理者用データベースのバックアップAPI
+# 管理者用データベースのバックアップAPI（完全復元可能な形式）
 @app.route('/api/admin/backup', methods=['GET'])
 def backup_database():
     try:
         # データベースファイルのコピーを作成（管理者用）
         backup_file = os.path.join(PERSISTENT_DIR, f'subspro_backup_{int(time.time())}.db')
         shutil.copy2(SQLITE_DB_PATH, backup_file)
+        
+        # 完全復元用のメタデータを含むJSONデータを作成
+        metadata = {
+            'version': '2.0',  # バックアップバージョン
+            'timestamp': int(time.time()),
+            'backup_type': 'full_system',
+            'description': '完全システムバックアップ - 環境リセット後も復元可能'
+        }
         
         # データエクスポート用のJSONデータを作成（全ユーザー）
         users = User.query.all()
@@ -313,8 +321,14 @@ def backup_database():
             
             export_data.append(user_data)
         
+        # 最終的なバックアップデータ
+        backup_data = {
+            'metadata': metadata,
+            'users': export_data
+        }
+        
         # JSONファイルをメモリに作成
-        json_data = json.dumps(export_data, indent=2, ensure_ascii=False)
+        json_data = json.dumps(backup_data, indent=2, ensure_ascii=False)
         json_file = io.BytesIO(json_data.encode('utf-8'))
         
         # JSONファイルをダウンロード
@@ -322,7 +336,7 @@ def backup_database():
             json_file,
             mimetype='application/json',
             as_attachment=True,
-            download_name=f'subspro_admin_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+            download_name=f'subspro_full_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
         )
     except Exception as e:
         logging.error(f"バックアップエラー: {e}")
