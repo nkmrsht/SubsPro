@@ -428,9 +428,11 @@
             }
             
             if (fromCurrency === 'JPY' && toCurrency === 'USD') {
+                // 円からドルへの変換は小数点第2位まで保持（表示用に丸めるのはformatCurrencyで行う）
                 return amount * exchangeRates.JPY_USD;
             } else if (fromCurrency === 'USD' && toCurrency === 'JPY') {
-                return amount * exchangeRates.USD_JPY;
+                // ドルから円への変換は小数点以下を四捨五入
+                return Math.round(amount * exchangeRates.USD_JPY);
             }
             
             return amount;
@@ -439,9 +441,11 @@
         // 金額を表示用にフォーマットする関数
         function formatCurrency(amount, currency) {
             if (currency === 'JPY') {
+                // 日本円は整数で表示（小数点以下切り捨て済み）
                 return Math.round(amount).toLocaleString() + '円';
             } else if (currency === 'USD') {
-                return '$' + amount.toFixed(2).toLocaleString();
+                // ドルは小数点第2位まで表示
+                return '$' + parseFloat(amount).toFixed(2).toLocaleString();
             }
             return amount.toString();
         }
@@ -538,6 +542,16 @@
             // 通貨関連の要素を初期化
             subscriptionCurrency = document.getElementById('subscription-currency');
             displayCurrencySelector = document.getElementById('display-currency');
+            
+            // 入力通貨に応じてステップ（小数点精度）を変更する
+            subscriptionCurrency.addEventListener('change', function(e) {
+                const feeInput = document.getElementById('subscription-fee');
+                if (e.target.value === 'USD') {
+                    feeInput.step = '0.01'; // ドルは小数点第2位まで
+                } else {
+                    feeInput.step = '1'; // 円は整数のみ
+                }
+            });
             
             // 表示通貨切り替えイベントを設定
             if (displayCurrencySelector) {
