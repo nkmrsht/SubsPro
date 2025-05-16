@@ -519,6 +519,7 @@
                 const userControlsTemplate = document.getElementById('user-controls-logged-in-template');
                 userControlsContainer.appendChild(userControlsTemplate.content.cloneNode(true));
                 
+                // デスクトップ表示用の設定
                 // Set username
                 document.getElementById('username-display').textContent = currentUser.username;
                 
@@ -530,6 +531,35 @@
                 document.getElementById('restore-user-button').addEventListener('click', function() {
                     document.getElementById('restore-file-input').click();
                 });
+                
+                // モバイル表示用の設定
+                // モバイル用ユーザー名表示
+                const usernameDisplayMobile = document.getElementById('username-display-mobile');
+                if (usernameDisplayMobile) {
+                    usernameDisplayMobile.textContent = currentUser.username;
+                }
+                
+                // モバイル用ログアウトボタン
+                const logoutButtonMobile = document.getElementById('logout-button-mobile');
+                if (logoutButtonMobile) {
+                    logoutButtonMobile.addEventListener('click', logout);
+                }
+                
+                // モバイル用バックアップボタン
+                const backupButtonMobile = document.getElementById('backup-user-button-mobile');
+                if (backupButtonMobile) {
+                    backupButtonMobile.addEventListener('click', backupUserData);
+                }
+                
+                // モバイル用復元ボタン
+                const restoreButtonMobile = document.getElementById('restore-user-button-mobile');
+                if (restoreButtonMobile) {
+                    restoreButtonMobile.addEventListener('click', function() {
+                        document.getElementById('restore-file-input').click();
+                    });
+                }
+                
+                // 共通のファイル入力イベントリスナー
                 document.getElementById('restore-file-input').addEventListener('change', restoreUserData);
                 
                 // Show main content
