@@ -637,7 +637,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     subscriptions = data;
-                    renderSubscriptionList();
+                    renderSubscriptions();
                     updateMonthlySummary();
                     saveTempDataToLocalStorage(); // バックアップとしてローカルにも保存
                 } else {
