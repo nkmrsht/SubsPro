@@ -277,20 +277,21 @@ def admin_get_users():
     } for user in users]
     return jsonify(user_list)
 
-# データベースのバックアップ用API
+# 管理者用データベースのバックアップAPI
 @app.route('/api/admin/backup', methods=['GET'])
 def backup_database():
     try:
-        # データベースファイルのコピーを作成
+        # データベースファイルのコピーを作成（管理者用）
         backup_file = os.path.join(PERSISTENT_DIR, f'subspro_backup_{int(time.time())}.db')
         shutil.copy2(SQLITE_DB_PATH, backup_file)
         
-        # データエクスポート用のJSONデータを作成
+        # データエクスポート用のJSONデータを作成（全ユーザー）
         users = User.query.all()
         export_data = []
         
         for user in users:
             user_data = {
+                'id': user.id,  # IDも保存
                 'username': user.username,
                 'password_hash': user.password_hash,
                 'created_at': user.created_at.isoformat() if user.created_at else None,
@@ -299,6 +300,7 @@ def backup_database():
             
             for sub in user.subscriptions:
                 sub_data = {
+                    'id': sub.id,  # IDも保存
                     'name': sub.name,
                     'fee': sub.fee,
                     'currency': sub.currency,
@@ -320,13 +322,56 @@ def backup_database():
             json_file,
             mimetype='application/json',
             as_attachment=True,
-            download_name=f'subspro_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+            download_name=f'subspro_admin_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
         )
     except Exception as e:
         logging.error(f"バックアップエラー: {e}")
         return jsonify({'error': str(e)}), 500
 
-# データベースの復元用API
+# ユーザー個人用バックアップAPI
+@app.route('/api/user/backup', methods=['GET'])
+@login_required
+def backup_user_data():
+    try:
+        # 現在のユーザーのデータのみをエクスポート
+        user = current_user
+        
+        user_data = {
+            'id': user.id,
+            'username': user.username,
+            'created_at': user.created_at.isoformat() if user.created_at else None,
+            'subscriptions': []
+        }
+        
+        for sub in user.subscriptions:
+            sub_data = {
+                'id': sub.id,
+                'name': sub.name,
+                'fee': sub.fee,
+                'currency': sub.currency,
+                'cycle': sub.cycle,
+                'payment_day': sub.payment_day,
+                'payment_month': sub.payment_month,
+                'created_at': sub.created_at.isoformat() if sub.created_at else None
+            }
+            user_data['subscriptions'].append(sub_data)
+        
+        # JSONファイルをメモリに作成
+        json_data = json.dumps(user_data, indent=2, ensure_ascii=False)
+        json_file = io.BytesIO(json_data.encode('utf-8'))
+        
+        # JSONファイルをダウンロード
+        return send_file(
+            json_file,
+            mimetype='application/json',
+            as_attachment=True,
+            download_name=f'subspro_user_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+        )
+    except Exception as e:
+        logging.error(f"ユーザーバックアップエラー: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# 管理者用データベースの全体復元API
 @app.route('/api/admin/restore', methods=['POST'])
 def restore_database():
     if 'backup_file' not in request.files:
@@ -339,50 +384,118 @@ def restore_database():
     
     try:
         # JSONデータを解析
-        json_data = json.loads(file.read().decode('utf-8'))
+        file_data = file.read().decode('utf-8')
+        json_data = json.loads(file_data)
         
-        # 既存のデータをクリア
-        Subscription.query.delete()
-        User.query.delete()
-        db.session.commit()
+        # リストでない場合は単一ユーザーのバックアップと判断
+        is_admin_backup = isinstance(json_data, list)
         
-        # ユーザーとサブスクリプションを復元
-        for user_data in json_data:
-            user = User(
-                id=str(uuid.uuid4()),
-                username=user_data['username'],
-                password_hash=user_data['password_hash']
-            )
+        if is_admin_backup:
+            # 管理者バックアップ: 全データを復元
             
-            if user_data.get('created_at'):
-                user.created_at = datetime.fromisoformat(user_data['created_at'])
+            # 既存のデータをクリア
+            Subscription.query.delete()
+            User.query.delete()
+            db.session.commit()
             
-            db.session.add(user)
-            db.session.flush()  # IDを取得するためにフラッシュ
-            
-            for sub_data in user_data.get('subscriptions', []):
-                subscription = Subscription(
-                    id=str(uuid.uuid4()),
-                    name=sub_data['name'],
-                    fee=sub_data['fee'],
-                    currency=sub_data.get('currency', 'JPY'),
-                    cycle=sub_data['cycle'],
-                    payment_day=sub_data['payment_day'],
-                    payment_month=sub_data.get('payment_month'),
-                    user_id=user.id
+            # ユーザーとサブスクリプションを復元
+            for user_data in json_data:
+                # 元のIDがあれば使用、なければ新規作成
+                user_id = user_data.get('id', str(uuid.uuid4()))
+                
+                user = User(
+                    id=user_id,
+                    username=user_data['username'],
+                    password_hash=user_data['password_hash']
                 )
                 
-                if sub_data.get('created_at'):
-                    subscription.created_at = datetime.fromisoformat(sub_data['created_at'])
+                if user_data.get('created_at'):
+                    user.created_at = datetime.fromisoformat(user_data['created_at'])
                 
-                db.session.add(subscription)
-        
-        db.session.commit()
-        return jsonify({'success': True, 'message': 'データベースが正常に復元されました'})
+                db.session.add(user)
+                db.session.flush()  # IDを取得するためにフラッシュ
+                
+                for sub_data in user_data.get('subscriptions', []):
+                    # 元のIDがあれば使用、なければ新規作成
+                    sub_id = sub_data.get('id', str(uuid.uuid4()))
+                    
+                    subscription = Subscription(
+                        id=sub_id,
+                        name=sub_data['name'],
+                        fee=sub_data['fee'],
+                        currency=sub_data.get('currency', 'JPY'),
+                        cycle=sub_data['cycle'],
+                        payment_day=sub_data['payment_day'],
+                        payment_month=sub_data.get('payment_month'),
+                        user_id=user.id
+                    )
+                    
+                    if sub_data.get('created_at'):
+                        subscription.created_at = datetime.fromisoformat(sub_data['created_at'])
+                    
+                    db.session.add(subscription)
+            
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'データベース全体が正常に復元されました'})
+        else:
+            return jsonify({'error': '管理者用バックアップファイルではありません'}), 400
     
     except Exception as e:
         db.session.rollback()
         logging.error(f"復元エラー: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ユーザー個人データの復元API
+@app.route('/api/user/restore', methods=['POST'])
+@login_required
+def restore_user_data():
+    if 'backup_file' not in request.files:
+        return jsonify({'error': 'バックアップファイルが見つかりません'}), 400
+    
+    file = request.files['backup_file']
+    
+    if file.filename == '':
+        return jsonify({'error': 'ファイルが選択されていません'}), 400
+    
+    try:
+        # JSONデータを解析
+        json_data = json.loads(file.read().decode('utf-8'))
+        
+        # ユーザー固有のバックアップかチェック
+        if isinstance(json_data, list) or 'subscriptions' not in json_data:
+            return jsonify({'error': '無効なユーザーバックアップファイルです'}), 400
+        
+        # 現在のユーザーのサブスクリプションを削除
+        Subscription.query.filter_by(user_id=current_user.id).delete()
+        db.session.commit()
+        
+        # サブスクリプションを復元
+        for sub_data in json_data.get('subscriptions', []):
+            # 元のIDがあれば使用、なければ新規作成
+            sub_id = sub_data.get('id', str(uuid.uuid4()))
+            
+            subscription = Subscription(
+                id=sub_id,
+                name=sub_data['name'],
+                fee=sub_data['fee'],
+                currency=sub_data.get('currency', 'JPY'),
+                cycle=sub_data['cycle'],
+                payment_day=sub_data['payment_day'],
+                payment_month=sub_data.get('payment_month'),
+                user_id=current_user.id
+            )
+            
+            if sub_data.get('created_at'):
+                subscription.created_at = datetime.fromisoformat(sub_data['created_at'])
+            
+            db.session.add(subscription)
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'ユーザーデータが正常に復元されました'})
+    
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"ユーザーデータ復元エラー: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
